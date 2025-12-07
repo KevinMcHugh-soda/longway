@@ -1,36 +1,36 @@
-id,title,artist,album,difficulty,length,year
-song-001,Eye of the Tiger,Survivor,Eye of the Tiger,Medium,4:05,1982
-song-002,Through the Fire and Flames,DragonForce,Inhuman Rampage,Expert,7:24,2006
-song-003,Knights of Cydonia,Muse,Black Holes and Revelations,Hard,6:06,2006
-song-004,Baba O'Riley,The Who,Who's Next,Medium,5:00,1971
-song-005,Africa,Toto,Toto IV,Easy,4:55,1982
-song-006,The Pretender,Foo Fighters,"Echoes, Silence, Patience & Grace",Hard,4:29,2007
-song-007,Chop Suey!,System of a Down,Toxicity,Hard,3:31,2001
-song-008,Back In Black,AC/DC,Back In Black,Medium,4:14,1980
-song-009,Smells Like Teen Spirit,Nirvana,Nevermind,Medium,5:01,1991
-song-010,Carry On Wayward Son,Kansas,Leftoverture,Hard,5:24,1976
-song-011,Mr. Brightside,The Killers,Hot Fuss,Medium,3:43,2003
-song-012,One,Metallica,...And Justice for All,Expert,7:27,1988
-song-013,Welcome to the Black Parade,My Chemical Romance,The Black Parade,Hard,5:11,2006
-song-014,Can't Stop,Red Hot Chili Peppers,By the Way,Medium,4:29,2002
-song-015,Everlong,Foo Fighters,The Colour and the Shape,Medium,4:10,1997
-song-016,Bohemian Rhapsody,Queen,A Night at the Opera,Expert,5:55,1975
-song-017,Hotel California,Eagles,Hotel California,Hard,6:31,1976
-song-018,Stairway to Heaven,Led Zeppelin,Led Zeppelin IV,Expert,8:02,1971
-song-019,Sweet Child O' Mine,Guns N' Roses,Appetite for Destruction,Hard,5:56,1987
-song-020,Take On Me,a-ha,Hunting High and Low,Easy,3:48,1985
-song-021,Billie Jean,Michael Jackson,Thriller,Medium,4:54,1982
-song-022,Thunderstruck,AC/DC,The Razors Edge,Hard,4:52,1990
-song-023,Enter Sandman,Metallica,Metallica,Hard,5:31,1991
-song-024,Paranoid Android,Radiohead,OK Computer,Hard,6:27,1997
-song-025,Hysteria,Muse,Absolution,Medium,3:47,2003
-song-026,Dani California,Red Hot Chili Peppers,Stadium Arcadium,Medium,4:42,2006
-song-027,Seven Nation Army,The White Stripes,Elephant,Medium,3:52,2003
-song-028,Closer to the Heart,Rush,A Farewell to Kings,Medium,2:53,1977
-song-029,Raining Blood,Slayer,Reign in Blood,Hard,4:14,1986
-song-030,The Trooper,Iron Maiden,Piece of Mind,Hard,4:11,1983
-song-031,Paint It Black,The Rolling Stones,Aftermath,Medium,3:45,1966
-song-032,Heroes,David Bowie,"Heroes",Medium,3:35,1977
-song-033,Little Red Corvette,Prince,1999,Medium,5:03,1983
-song-034,Lose Yourself,Eminem,8 Mile,Hard,5:26,2002
-song-035,Black Hole Sun,Soundgarden,Superunknown,Hard,5:18,1994
+id,title,artist,album,genre,difficulty,length,year
+song-001,Eye of the Tiger,Survivor,Eye of the Tiger,Rock,3,4:05,1982
+song-002,Through the Fire and Flames,DragonForce,Inhuman Rampage,Metal,6,7:24,2006
+song-003,Knights of Cydonia,Muse,Black Holes and Revelations,Rock,5,6:06,2006
+song-004,Baba O'Riley,The Who,Who's Next,Classic Rock,3,5:00,1971
+song-005,Africa,Toto,Toto IV,Pop Rock,1,4:55,1982
+song-006,The Pretender,Foo Fighters,"Echoes, Silence, Patience & Grace",Rock,4,4:29,2007
+song-007,Chop Suey!,System of a Down,Toxicity,Metal,4,3:31,2001
+song-008,Back In Black,AC/DC,Back In Black,Rock,3,4:14,1980
+song-009,Smells Like Teen Spirit,Nirvana,Nevermind,Grunge,3,5:01,1991
+song-010,Carry On Wayward Son,Kansas,Leftoverture,Classic Rock,4,5:24,1976
+song-011,Mr. Brightside,The Killers,Hot Fuss,Indie Rock,2,3:43,2003
+song-012,One,Metallica,...And Justice for All,Metal,6,7:27,1988
+song-013,Welcome to the Black Parade,My Chemical Romance,The Black Parade,Alternative,4,5:11,2006
+song-014,Can't Stop,Red Hot Chili Peppers,By the Way,Funk Rock,3,4:29,2002
+song-015,Everlong,Foo Fighters,The Colour and the Shape,Rock,3,4:10,1997
+song-016,Bohemian Rhapsody,Queen,A Night at the Opera,Classic Rock,5,5:55,1975
+song-017,Hotel California,Eagles,Hotel California,Classic Rock,4,6:31,1976
+song-018,Stairway to Heaven,Led Zeppelin,Led Zeppelin IV,Classic Rock,6,8:02,1971
+song-019,Sweet Child O' Mine,Guns N' Roses,Appetite for Destruction,Hard Rock,4,5:56,1987
+song-020,Take On Me,a-ha,Hunting High and Low,Synthpop,1,3:48,1985
+song-021,Billie Jean,Michael Jackson,Thriller,Pop,2,4:54,1982
+song-022,Thunderstruck,AC/DC,The Razors Edge,Rock,4,4:52,1990
+song-023,Enter Sandman,Metallica,Metallica,Metal,4,5:31,1991
+song-024,Paranoid Android,Radiohead,OK Computer,Alternative,5,6:27,1997
+song-025,Hysteria,Muse,Absolution,Alternative,4,3:47,2003
+song-026,Dani California,Red Hot Chili Peppers,Stadium Arcadium,Funk Rock,3,4:42,2006
+song-027,Seven Nation Army,The White Stripes,Elephant,Garage Rock,2,3:52,2003
+song-028,Closer to the Heart,Rush,A Farewell to Kings,Progressive Rock,2,2:53,1977
+song-029,Raining Blood,Slayer,Reign in Blood,Metal,6,4:14,1986
+song-030,The Trooper,Iron Maiden,Piece of Mind,Metal,5,4:11,1983
+song-031,Paint It Black,The Rolling Stones,Aftermath,Classic Rock,2,3:45,1966
+song-032,Heroes,David Bowie,"Heroes",Art Rock,2,3:35,1977
+song-033,Little Red Corvette,Prince,1999,Pop Rock,2,5:03,1983
+song-034,Lose Yourself,Eminem,8 Mile,Hip-Hop,4,5:26,2002
+song-035,Black Hole Sun,Soundgarden,Superunknown,Grunge,4,5:18,1994

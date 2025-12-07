@@ -64,7 +64,8 @@ type song struct {
 	title      string
 	artist     string
 	album      string
-	difficulty string
+	genre      string
+	difficulty int
 	length     string
 	year       int
 	seconds    int
@@ -254,12 +255,15 @@ func newTestChallenge(songs []song) *challenge {
 
 func fallbackSong() song {
 	return song{
-		id:      "song-001",
-		title:   "Eye of the Tiger",
-		artist:  "Survivor",
-		year:    1982,
-		length:  "4:05",
-		seconds: 245,
+		id:         "song-001",
+		title:      "Eye of the Tiger",
+		artist:     "Survivor",
+		album:      "Eye of the Tiger",
+		genre:      "Rock",
+		difficulty: 3,
+		year:       1982,
+		length:     "4:05",
+		seconds:    245,
 	}
 }
 
@@ -297,8 +301,8 @@ func loadSongs(path string) ([]song, error) {
 		if isHeader(rec) {
 			continue
 		}
-		if len(rec) < 3 {
-			return nil, fmt.Errorf("invalid song record (need at least id,title,artist): %v", rec)
+		if len(rec) < 5 {
+			return nil, fmt.Errorf("invalid song record (need at least id,title,artist,album,genre): %v", rec)
 		}
 
 		songs = append(songs, song{
@@ -306,10 +310,11 @@ func loadSongs(path string) ([]song, error) {
 			title:      strings.TrimSpace(rec[1]),
 			artist:     strings.TrimSpace(rec[2]),
 			album:      field(rec, 3),
-			difficulty: field(rec, 4),
-			length:     field(rec, 5),
-			year:       parseYear(field(rec, 6)),
-			seconds:    parseDurationToSeconds(field(rec, 5)),
+			genre:      field(rec, 4),
+			difficulty: parseDifficulty(field(rec, 5)),
+			length:     field(rec, 6),
+			year:       parseYear(field(rec, 7)),
+			seconds:    parseDurationToSeconds(field(rec, 6)),
 		})
 	}
 
@@ -321,12 +326,14 @@ func loadSongs(path string) ([]song, error) {
 }
 
 func isHeader(rec []string) bool {
-	if len(rec) < 3 {
+	if len(rec) < 5 {
 		return false
 	}
 	return strings.EqualFold(strings.TrimSpace(rec[0]), "id") &&
 		strings.EqualFold(strings.TrimSpace(rec[1]), "title") &&
-		strings.EqualFold(strings.TrimSpace(rec[2]), "artist")
+		strings.EqualFold(strings.TrimSpace(rec[2]), "artist") &&
+		strings.EqualFold(strings.TrimSpace(rec[3]), "album") &&
+		strings.EqualFold(strings.TrimSpace(rec[4]), "genre")
 }
 
 func field(rec []string, idx int) string {
@@ -364,6 +371,23 @@ func parseDurationToSeconds(val string) int {
 		return 0
 	}
 	return minutes*60 + seconds
+}
+
+func parseDifficulty(val string) int {
+	if val == "" {
+		return 0
+	}
+	d, err := strconv.Atoi(val)
+	if err != nil {
+		return 0
+	}
+	if d < 0 {
+		return 0
+	}
+	if d > 6 {
+		return 6
+	}
+	return d
 }
 
 func connectRows(prev []node, next []node, rng *rand.Rand) {
@@ -695,8 +719,11 @@ func renderNodePreview(n *node) string {
 			if s.length != "" {
 				line += fmt.Sprintf(" [%s]", s.length)
 			}
-			if s.difficulty != "" {
-				line += fmt.Sprintf(" • %s", s.difficulty)
+			if s.difficulty > 0 {
+				line += fmt.Sprintf(" • diff %d/6", s.difficulty)
+			}
+			if s.genre != "" {
+				line += fmt.Sprintf(" • %s", s.genre)
 			}
 			b.WriteString(line + "\n")
 		}
