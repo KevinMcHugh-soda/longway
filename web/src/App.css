@@ -35,3 +35,55 @@ h1 {
   color: #cbd5e1;
   line-height: 1.6;
 }
+
+.acts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.act {
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 1rem;
+  background: linear-gradient(145deg, #0b1222, #0f172a);
+}
+
+.act h2 {
+  margin: 0 0 0.5rem 0;
+  color: #e2e8f0;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.node {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.node-challenge {
+  background: #a5b4fc;
+}
+
+.node-boss {
+  background: #f472b6;
+}
+
+.seed {
+  margin-top: 0.75rem;
+  color: #94a3b8;
+}
