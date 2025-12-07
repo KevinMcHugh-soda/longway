@@ -1,4 +1,4 @@
-import { songs as catalog } from '../data/songs'
+import { songs as catalog } from '../data/songs.js'
 
 const totalActs = 3
 const rowsPerAct = 8
@@ -31,7 +31,16 @@ function generateAct(index, rng) {
   const rows = []
 
   for (let row = 0; row < rowsPerAct; row++) {
+    let maxAllowed = maxNodesPerRow
+    if (row > 0) {
+      maxAllowed = Math.min(maxNodesPerRow, rows[row - 1].length * 2)
+      if (maxAllowed < minNodesPerRow) {
+        maxAllowed = Math.max(1, maxAllowed)
+      }
+    }
     let count = minNodesPerRow + rngInt(rng, maxNodesPerRow - minNodesPerRow + 1)
+    count = Math.min(count, maxAllowed)
+    if (count < 1) count = 1
     if (row === rowsPerAct - 1) {
       count = 1 // boss
     }
@@ -60,17 +69,34 @@ function generateAct(index, rng) {
 function connectRows(prev, next, rng) {
   if (!prev.length || !next.length) return
 
+  const edgeSets = prev.map(() => new Set())
+
   // ensure every next node has an inbound edge
   next.forEach((_, nextIdx) => {
-    const src = rngInt(rng, prev.length)
-    prev[src].edges.push(nextIdx)
+    const candidates = edgeSets
+      .map((set, idx) => ({ size: set.size, idx }))
+      .filter(({ size }) => size < 2)
+    if (candidates.length === 0) return
+    const pick = candidates[rngInt(rng, candidates.length)].idx
+    edgeSets[pick].add(nextIdx)
   })
 
   // add extra edges
-  prev.forEach((node) => {
-    const targetCount = Math.min(1 + rngInt(rng, 2), next.length)
-    const picks = pickDistinct(next.length, targetCount, rng)
-    node.edges.push(...picks)
+  prev.forEach((node, idx) => {
+    const set = edgeSets[idx] ?? new Set()
+    const remaining = Math.max(0, 2 - set.size)
+    const available = Math.max(0, next.length - set.size)
+    if (remaining <= 0 || available <= 0) return
+    const targetCount = Math.min(remaining, available)
+    const picks = pickDistinct(next.length, targetCount, rng, set)
+    picks.forEach((p) => set.add(p))
+    edgeSets[idx] = set
+  })
+
+  // finalize edges with a max of 2 unique targets
+  edgeSets.forEach((set, idx) => {
+    const limited = Array.from(set)
+    prev[idx].edges = limited
   })
 }
 
@@ -114,14 +140,18 @@ function sample(pool, count, rng) {
   return indices.map((i) => pool[i])
 }
 
-function pickDistinct(size, count, rng) {
+function pickDistinct(size, count, rng, existing = new Set()) {
   const seen = new Set()
+  existing.forEach((v) => seen.add(v))
   const picks = []
-  while (picks.length < count) {
+  let safety = 0
+  const maxAttempts = size * 3
+  while (picks.length < count && safety < maxAttempts) {
     const v = rngInt(rng, size)
     if (seen.has(v)) continue
     seen.add(v)
     picks.push(v)
+    safety++
   }
   return picks
 }

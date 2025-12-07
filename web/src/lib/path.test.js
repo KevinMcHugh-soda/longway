@@ -17,6 +17,11 @@ describe('path generation', () => {
         for (let c = 0; c < act.rows[r].length; c++) {
           const hasIncoming = act.rows[r - 1].some((n) => n.edges.includes(c))
           expect(hasIncoming).toBe(true)
+
+          // each node should have <=2 edges
+          act.rows[r - 1].forEach((n) => {
+            expect(n.edges.length).toBeLessThanOrEqual(2)
+          })
         }
       }
     })
