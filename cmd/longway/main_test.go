@@ -169,8 +169,8 @@ func TestLoadSongsReadsCSV(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loadSongs error: %v", err)
 	}
-	if len(songs) == 0 {
-		t.Fatalf("expected songs from CSV")
+	if len(songs) < 20 {
+		t.Fatalf("expected at least 20 songs from CSV, got %d", len(songs))
 	}
 
 	found := false
