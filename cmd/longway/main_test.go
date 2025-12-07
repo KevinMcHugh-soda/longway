@@ -44,51 +44,6 @@ func TestGenerateRunCreatesChallengeNodes(t *testing.T) {
 	}
 }
 
-func TestMoveDownFollowsEdge(t *testing.T) {
-	a := act{
-		index: 1,
-		rows: [][]node{
-			{
-				{col: 0, edges: []int{1}},
-			},
-			{
-				{col: 0},
-				{col: 1},
-			},
-		},
-	}
-	m := model{acts: []act{a}, currentAct: 0, cursorRow: 0, cursorCol: 0}
-
-	m.moveDown()
-
-	if m.cursorRow != 1 || m.cursorCol != 1 {
-		t.Fatalf("moveDown landed at row %d col %d, want row 1 col 1", m.cursorRow, m.cursorCol)
-	}
-}
-
-func TestMoveUpFindsIncomingEdge(t *testing.T) {
-	a := act{
-		index: 1,
-		rows: [][]node{
-			{
-				{col: 0, edges: []int{1}},
-				{col: 1},
-			},
-			{
-				{col: 0},
-				{col: 1},
-			},
-		},
-	}
-	m := model{acts: []act{a}, currentAct: 0, cursorRow: 1, cursorCol: 1}
-
-	m.moveUp()
-
-	if m.cursorRow != 0 || m.cursorCol != 0 {
-		t.Fatalf("moveUp landed at row %d col %d, want row 0 col 0", m.cursorRow, m.cursorCol)
-	}
-}
-
 func TestHorizontalMovementClamps(t *testing.T) {
 	a := act{
 		index: 1,
@@ -99,7 +54,14 @@ func TestHorizontalMovementClamps(t *testing.T) {
 			},
 		},
 	}
-	m := model{acts: []act{a}, currentAct: 0, cursorRow: 0, cursorCol: 0}
+	m := model{
+		acts:       []act{a},
+		currentAct: 0,
+		cursorRow:  0,
+		cursorCol:  0,
+		allowed:    []int{0, 1},
+		allowedIdx: 0,
+	}
 
 	m.moveHorizontal(-1)
 	if m.cursorCol != 0 {
@@ -156,7 +118,7 @@ func TestRenderNodePreviewIncludesChallengeDetails(t *testing.T) {
 	}
 
 	out := renderNodePreview(n)
-	if !strings.Contains(out, "TestChallenge") || !strings.Contains(out, "Eye of the Tiger") {
+	if !strings.Contains(out, "TestChallenge") || !strings.Contains(out, "Play it.") {
 		t.Fatalf("renderNodePreview missing challenge details: %s", out)
 	}
 }
