@@ -362,10 +362,14 @@ func renderNodePreview(n *node, m *model) string {
 		for i, s := range songsToShow {
 			prefix := "- "
 			if selecting {
+				cursor := " "
+				if i == m.selectionIdx {
+					cursor = ">"
+				}
 				if _, ok := selectedIDs[songKey(s)]; ok {
-					prefix = "[x] "
+					prefix = cursor + "[x] "
 				} else {
-					prefix = "[ ] "
+					prefix = cursor + "[ ] "
 				}
 			} else if entering && i == currentStarIdx {
 				prefix = "> "

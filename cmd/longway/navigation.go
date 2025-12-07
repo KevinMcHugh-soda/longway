@@ -81,6 +81,9 @@ func (m *model) submitStars() {
 	if !m.enteringStars {
 		return
 	}
+	if m.starInput == "" {
+		return
+	}
 	val := clampDifficulty(parseDifficulty(m.starInput))
 	m.selectedStars[m.starEntryIdx] = val
 	m.starInput = ""
