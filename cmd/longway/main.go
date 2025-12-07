@@ -79,12 +79,13 @@ var (
 )
 
 const (
-	totalActs      = 3
-	rowsPerAct     = 8
-	minNodesPerRow = 2
-	maxNodesPerRow = 5
-	colSpacing     = 4
-	songsFile      = "songs.csv"
+	totalActs             = 3
+	rowsPerAct            = 8
+	minNodesPerRow        = 2
+	maxNodesPerRow        = 5
+	colSpacing            = 4
+	songsFile             = "songs.csv"
+	challengeSongListSize = 12
 )
 
 func newModel(songs []song) model {
@@ -226,9 +227,16 @@ func generateAct(index int, rng *rand.Rand, songs []song) act {
 }
 
 func newTestChallenge(songs []song) *challenge {
+	candidates := songs
+	if len(candidates) == 0 {
+		candidates = []song{fallbackSong()}
+	}
+
 	s := fallbackSong()
-	if found, ok := findSongByTitle(songs, "Eye of the Tiger"); ok {
+	if found, ok := findSongByTitle(candidates, "Eye of the Tiger"); ok {
 		s = found
+	} else {
+		s = candidates[0]
 	}
 
 	summary := "Play \"Eye of the Tiger\" to push through this encounter."
@@ -240,7 +248,7 @@ func newTestChallenge(songs []song) *challenge {
 		id:      "test-challenge",
 		name:    "TestChallenge",
 		summary: summary,
-		songs:   []song{s},
+		songs:   sampleSongs(candidates, min(challengeSongListSize, len(candidates)), rand.New(rand.NewSource(time.Now().UnixNano()))),
 	}
 }
 
@@ -434,9 +442,9 @@ func newDecadeChallenge(songs []song, rng *rand.Rand) (*challenge, bool) {
 
 	decade := eligible[rng.Intn(len(eligible))]
 	pool := byDecade[decade]
-	selected := sampleSongs(pool, 3, rng)
+	selected := sampleSongs(pool, min(challengeSongListSize, len(pool)), rng)
 
-	summary := fmt.Sprintf("Play three tracks from the %ds.", decade)
+	summary := fmt.Sprintf("Pick any 3 of these %d tracks from the %ds.", len(selected), decade)
 
 	return &challenge{
 		id:      fmt.Sprintf("decade-%d", decade),
@@ -458,12 +466,12 @@ func newLongSongChallenge(songs []song, rng *rand.Rand) (*challenge, bool) {
 		return nil, false
 	}
 
-	selected := sampleSongs(longSongs, 3, rng)
+	selected := sampleSongs(longSongs, min(challengeSongListSize, len(longSongs)), rng)
 
 	return &challenge{
 		id:      "long-song",
 		name:    "LongSongChallenge",
-		summary: "Play three long tracks (over 5 minutes) back-to-back.",
+		summary: fmt.Sprintf("Pick any 3 of these %d long tracks (over 5 minutes).", len(selected)),
 		songs:   selected,
 	}, true
 }
@@ -653,6 +661,13 @@ func nodeGlyph(n node) rune {
 
 func max(a, b int) int {
 	if a > b {
+		return a
+	}
+	return b
+}
+
+func min(a, b int) int {
+	if a < b {
 		return a
 	}
 	return b

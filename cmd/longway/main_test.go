@@ -198,6 +198,9 @@ func TestNewDecadeChallengePicksSameDecade(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected decade challenge")
 	}
+	if len(ch.songs) == 0 || len(ch.songs) > challengeSongListSize {
+		t.Fatalf("expected 1..%d songs, got %d", challengeSongListSize, len(ch.songs))
+	}
 	for _, s := range ch.songs {
 		if decadeForYear(s.year) != decadeForYear(ch.songs[0].year) {
 			t.Fatalf("songs from different decades: %d vs %d", s.year, ch.songs[0].year)
@@ -217,6 +220,9 @@ func TestNewLongSongChallengePicksLongTracks(t *testing.T) {
 	ch, ok := newLongSongChallenge(songs, rng)
 	if !ok {
 		t.Fatalf("expected long song challenge")
+	}
+	if len(ch.songs) == 0 || len(ch.songs) > challengeSongListSize {
+		t.Fatalf("expected 1..%d songs, got %d", challengeSongListSize, len(ch.songs))
 	}
 	for _, s := range ch.songs {
 		if s.seconds <= 300 {
