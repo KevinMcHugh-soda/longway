@@ -1,3 +1,5 @@
 auth.json
 
 .local-go
+node_modules
+web/node_modules
