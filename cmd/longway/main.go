@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,10 +12,13 @@ import (
 )
 
 type model struct {
-	acts   []act
-	seed   int64
-	width  int
-	height int
+	acts       []act
+	currentAct int
+	cursorRow  int
+	cursorCol  int
+	seed       int64
+	width      int
+	height     int
 }
 
 type node struct {
@@ -43,6 +47,14 @@ type challenge struct {
 	summary string
 }
 
+var (
+	nodeStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("#B6EEA6")).Bold(true)
+	selectedNodeStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#1E1E2E")).
+				Background(lipgloss.Color("#F0D94A")).
+				Bold(true)
+)
+
 const (
 	totalActs      = 3
 	rowsPerAct     = 8
@@ -54,8 +66,11 @@ const (
 func newModel() model {
 	seed := time.Now().UnixNano()
 	return model{
-		acts: generateRun(seed),
-		seed: seed,
+		acts:       generateRun(seed),
+		currentAct: 0,
+		cursorRow:  0,
+		cursorCol:  0,
+		seed:       seed,
 	}
 }
 
@@ -76,6 +91,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			m.seed = time.Now().UnixNano()
 			m.acts = generateRun(m.seed)
+			m.currentAct = 0
+			m.cursorRow = 0
+			m.cursorCol = 0
+		case "left", "h":
+			m.moveHorizontal(-1)
+		case "right", "l":
+			m.moveHorizontal(1)
+		case "down", "j", "enter":
+			m.moveDown()
+		case "up", "k":
+			m.moveUp()
+		case "]":
+			m.nextAct()
+		case "[":
+			m.prevAct()
 		}
 	}
 
@@ -94,14 +124,11 @@ func (m model) View() string {
 		Render("Three-act rhythm roguelike — routes like Slay the Spire, resolved by rhythm.")
 
 	controls := "Controls: r rerolls the route • q quits"
+	navigation := "Navigation: ←/→ (h/l) move across row • ↓/↵ (j/enter) follow edge • ↑ (k) backtrack • [ ] switch act"
 	legend := "Legend: C Challenge (TestChallenge: Eye of the Tiger)"
 
-	actViews := make([]string, 0, len(m.acts))
-	for _, a := range m.acts {
-		actViews = append(actViews, renderAct(a))
-	}
-
-	body := lipgloss.JoinVertical(lipgloss.Left, actViews...)
+	actView := renderAct(m.acts[m.currentAct], m.cursorRow, m.cursorCol)
+	body := lipgloss.JoinVertical(lipgloss.Left, actView)
 
 	bodyBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -114,9 +141,11 @@ func (m model) View() string {
 		title,
 		sub,
 		fmt.Sprintf("Seed: %d", m.seed),
+		fmt.Sprintf("Act %d/%d", m.currentAct+1, len(m.acts)),
 		"",
 		bodyBox,
 		"",
+		navigation,
 		legend,
 		controls,
 	)
@@ -204,7 +233,76 @@ func pickTargets(nextCount int, rng *rand.Rand) []int {
 	return targets
 }
 
-func renderAct(a act) string {
+func (m *model) moveHorizontal(delta int) {
+	act := m.acts[m.currentAct]
+	if len(act.rows) == 0 {
+		return
+	}
+	row := act.rows[m.cursorRow]
+	newCol := m.cursorCol + delta
+	if newCol < 0 {
+		newCol = 0
+	} else if newCol >= len(row) {
+		newCol = len(row) - 1
+	}
+	m.cursorCol = newCol
+}
+
+func (m *model) moveDown() {
+	act := m.acts[m.currentAct]
+	if m.cursorRow >= len(act.rows)-1 {
+		return
+	}
+	n := act.rows[m.cursorRow][m.cursorCol]
+	if len(n.edges) == 0 {
+		return
+	}
+	targetCol := n.edges[0]
+	nextRow := act.rows[m.cursorRow+1]
+	if targetCol >= len(nextRow) {
+		targetCol = len(nextRow) - 1
+	}
+	m.cursorRow++
+	m.cursorCol = targetCol
+}
+
+func (m *model) moveUp() {
+	act := m.acts[m.currentAct]
+	if m.cursorRow == 0 {
+		return
+	}
+	targetCol := m.cursorCol
+	prevRow := act.rows[m.cursorRow-1]
+	for col, n := range prevRow {
+		for _, e := range n.edges {
+			if e == targetCol {
+				m.cursorRow--
+				m.cursorCol = col
+				return
+			}
+		}
+	}
+}
+
+func (m *model) nextAct() {
+	if m.currentAct+1 >= len(m.acts) {
+		return
+	}
+	m.currentAct++
+	m.cursorRow = 0
+	m.cursorCol = 0
+}
+
+func (m *model) prevAct() {
+	if m.currentAct == 0 {
+		return
+	}
+	m.currentAct--
+	m.cursorRow = 0
+	m.cursorCol = 0
+}
+
+func renderAct(a act, selectedRow, selectedCol int) string {
 	height := (len(a.rows) * 2) - 1
 	maxCols := 0
 	for _, row := range a.rows {
@@ -249,7 +347,20 @@ func renderAct(a act) string {
 
 	lines := make([]string, len(grid))
 	for i, r := range grid {
-		lines[i] = string(r)
+		var b strings.Builder
+		for j, ch := range r {
+			if selectedRow >= 0 && selectedCol >= 0 &&
+				i == selectedRow*2 && j == selectedCol*colSpacing && ch != ' ' {
+				b.WriteString(selectedNodeStyle.Render(string(ch)))
+			} else {
+				if ch == 'C' {
+					b.WriteString(nodeStyle.Render(string(ch)))
+				} else {
+					b.WriteRune(ch)
+				}
+			}
+		}
+		lines[i] = b.String()
 	}
 
 	title := lipgloss.NewStyle().

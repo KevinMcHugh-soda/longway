@@ -35,3 +35,102 @@ func TestGenerateRunCreatesChallengeNodes(t *testing.T) {
 		}
 	}
 }
+
+func TestMoveDownFollowsEdge(t *testing.T) {
+	a := act{
+		index: 1,
+		rows: [][]node{
+			{
+				{col: 0, edges: []int{1}},
+			},
+			{
+				{col: 0},
+				{col: 1},
+			},
+		},
+	}
+	m := model{acts: []act{a}, currentAct: 0, cursorRow: 0, cursorCol: 0}
+
+	m.moveDown()
+
+	if m.cursorRow != 1 || m.cursorCol != 1 {
+		t.Fatalf("moveDown landed at row %d col %d, want row 1 col 1", m.cursorRow, m.cursorCol)
+	}
+}
+
+func TestMoveUpFindsIncomingEdge(t *testing.T) {
+	a := act{
+		index: 1,
+		rows: [][]node{
+			{
+				{col: 0, edges: []int{1}},
+				{col: 1},
+			},
+			{
+				{col: 0},
+				{col: 1},
+			},
+		},
+	}
+	m := model{acts: []act{a}, currentAct: 0, cursorRow: 1, cursorCol: 1}
+
+	m.moveUp()
+
+	if m.cursorRow != 0 || m.cursorCol != 0 {
+		t.Fatalf("moveUp landed at row %d col %d, want row 0 col 0", m.cursorRow, m.cursorCol)
+	}
+}
+
+func TestHorizontalMovementClamps(t *testing.T) {
+	a := act{
+		index: 1,
+		rows: [][]node{
+			{
+				{col: 0},
+				{col: 1},
+			},
+		},
+	}
+	m := model{acts: []act{a}, currentAct: 0, cursorRow: 0, cursorCol: 0}
+
+	m.moveHorizontal(-1)
+	if m.cursorCol != 0 {
+		t.Fatalf("moveHorizontal underflow: col %d, want 0", m.cursorCol)
+	}
+
+	m.moveHorizontal(1)
+	if m.cursorCol != 1 {
+		t.Fatalf("moveHorizontal right: col %d, want 1", m.cursorCol)
+	}
+
+	m.moveHorizontal(5)
+	if m.cursorCol != 1 {
+		t.Fatalf("moveHorizontal overflow clamp: col %d, want 1", m.cursorCol)
+	}
+}
+
+func TestSwitchActResetsCursor(t *testing.T) {
+	acts := []act{
+		{index: 1, rows: [][]node{{{col: 0}}}},
+		{index: 2, rows: [][]node{{{col: 0}, {col: 1}}}},
+	}
+	m := model{acts: acts, currentAct: 0, cursorRow: 0, cursorCol: 0}
+	m.cursorRow = 0
+	m.cursorCol = 1
+
+	m.nextAct()
+	if m.currentAct != 1 {
+		t.Fatalf("expected currentAct 1, got %d", m.currentAct)
+	}
+	if m.cursorRow != 0 || m.cursorCol != 0 {
+		t.Fatalf("cursor not reset on nextAct: row %d col %d", m.cursorRow, m.cursorCol)
+	}
+
+	m.prevAct()
+	if m.currentAct != 0 {
+		t.Fatalf("expected currentAct 0, got %d", m.currentAct)
+	}
+	if m.cursorRow != 0 || m.cursorCol != 0 {
+		t.Fatalf("cursor not reset on prevAct: row %d col %d", m.cursorRow, m.cursorCol)
+	}
+}
