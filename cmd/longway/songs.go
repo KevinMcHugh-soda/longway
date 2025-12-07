@@ -126,13 +126,7 @@ func parseDifficulty(val string) int {
 	if err != nil {
 		return 0
 	}
-	if d < 0 {
-		return 0
-	}
-	if d > 6 {
-		return 6
-	}
-	return d
+	return clampDifficulty(d)
 }
 
 func fallbackSong() song {

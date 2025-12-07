@@ -145,31 +145,33 @@ func newDifficultyChallenge(songs []song, rng *rand.Rand) (*challenge, bool) {
 		return nil, false
 	}
 
-	tiers := map[string][]song{
-		"easy":   {},
-		"medium": {},
-		"hard":   {},
-		"expert": {},
-	}
-
+	buckets := make(map[int][]song)
 	for _, s := range songs {
-		tiers[difficultyTier(s.difficulty)] = append(tiers[difficultyTier(s.difficulty)], s)
+		level := clampDifficulty(s.difficulty)
+		buckets[level] = append(buckets[level], s)
 	}
 
-	labels := []string{"expert", "hard", "medium", "easy"}
-	for _, label := range labels {
-		if len(tiers[label]) >= 3 {
-			selected := sampleSongs(tiers[label], min(challengeSongListSize, len(tiers[label])), rng)
-			return &challenge{
-				id:      fmt.Sprintf("difficulty-%s", label),
-				name:    "DifficultyChallenge",
-				summary: fmt.Sprintf("Pick any 3 of these %d %s tracks.", len(selected), label),
-				songs:   selected,
-			}, true
+	var eligible []int
+	for level, list := range buckets {
+		if len(list) >= 3 {
+			eligible = append(eligible, level)
 		}
 	}
 
-	return nil, false
+	if len(eligible) == 0 {
+		return nil, false
+	}
+
+	level := eligible[rng.Intn(len(eligible))]
+	pool := buckets[level]
+	selected := sampleSongs(pool, min(challengeSongListSize, len(pool)), rng)
+
+	return &challenge{
+		id:      fmt.Sprintf("difficulty-%d", level),
+		name:    "DifficultyChallenge",
+		summary: fmt.Sprintf("Pick any 3 of these %d tracks at difficulty %d.", len(selected), level),
+		songs:   selected,
+	}, true
 }
 
 func newTestChallenge(songs []song) *challenge {
@@ -229,4 +231,14 @@ func difficultyTier(d int) string {
 	default:
 		return "easy"
 	}
+}
+
+func clampDifficulty(d int) int {
+	if d < 0 {
+		return 0
+	}
+	if d > 6 {
+		return 6
+	}
+	return d
 }

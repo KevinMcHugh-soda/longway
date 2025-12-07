@@ -257,12 +257,11 @@ func TestNewGenreChallengeUsesSameGenre(t *testing.T) {
 func TestNewDifficultyChallengeUsesTier(t *testing.T) {
 	rng := rand.New(rand.NewSource(3))
 	songs := []song{
-		{title: "Easy", difficulty: 1},
-		{title: "MedA", difficulty: 3},
-		{title: "MedB", difficulty: 4},
-		{title: "MedC", difficulty: 4},
-		{title: "Hard", difficulty: 5},
-		{title: "Expert", difficulty: 6},
+		{title: "Lvl1-A", difficulty: 1},
+		{title: "Lvl1-B", difficulty: 1},
+		{title: "Lvl1-C", difficulty: 1},
+		{title: "Lvl2", difficulty: 2},
+		{title: "Lvl4", difficulty: 4},
 	}
 
 	ch, ok := newDifficultyChallenge(songs, rng)
@@ -273,10 +272,10 @@ func TestNewDifficultyChallengeUsesTier(t *testing.T) {
 		t.Fatalf("expected 1..%d songs, got %d", challengeSongListSize, len(ch.songs))
 	}
 
-	firstTier := difficultyTier(ch.songs[0].difficulty)
+	firstLevel := ch.songs[0].difficulty
 	for _, s := range ch.songs {
-		if difficultyTier(s.difficulty) != firstTier {
-			t.Fatalf("mixed difficulty tiers: %d vs %d", s.difficulty, ch.songs[0].difficulty)
+		if s.difficulty != firstLevel {
+			t.Fatalf("mixed difficulty levels: %d vs %d", s.difficulty, firstLevel)
 		}
 	}
 }
