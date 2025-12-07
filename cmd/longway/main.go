@@ -71,6 +71,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 	case tea.KeyMsg:
+		if msg.String() == "ctrl+c" || msg.String() == "q" {
+			return m, tea.Quit
+		}
+
 		if m.selectingSongs {
 			switch msg.String() {
 			case "up", "k":
@@ -101,8 +105,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
 		case "r":
 			m.seed = time.Now().UnixNano()
 			m.resetRun()

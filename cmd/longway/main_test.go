@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestGenerateRunCreatesChallengeNodes(t *testing.T) {
@@ -335,5 +337,20 @@ func TestBossIsLastRow(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestCtrlCAlwaysQuits(t *testing.T) {
+	m := newModel([]song{
+		{title: "Song", artist: "A", difficulty: 1},
+	})
+	m.selectingSongs = true
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+	if cmd == nil {
+		t.Fatalf("expected quit command")
+	}
+	msg := cmd()
+	if _, ok := msg.(tea.QuitMsg); !ok {
+		t.Fatalf("expected QuitMsg, got %T", msg)
 	}
 }
