@@ -130,6 +130,14 @@ func (m model) View() string {
 	actView := renderAct(m.acts[m.currentAct], m.cursorRow, m.cursorCol)
 	body := lipgloss.JoinVertical(lipgloss.Left, actView)
 
+	preview := renderNodePreview(m.selectedNode())
+	previewBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#6C7086")).
+		Padding(1, 2).
+		Width(max(70, m.width-4)).
+		Render(preview)
+
 	bodyBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#6C7086")).
@@ -144,6 +152,8 @@ func (m model) View() string {
 		fmt.Sprintf("Act %d/%d", m.currentAct+1, len(m.acts)),
 		"",
 		bodyBox,
+		"",
+		previewBox,
 		"",
 		navigation,
 		legend,
@@ -231,6 +241,21 @@ func pickTargets(nextCount int, rng *rand.Rand) []int {
 		targets = append(targets, t)
 	}
 	return targets
+}
+
+func (m model) selectedNode() *node {
+	if m.currentAct < 0 || m.currentAct >= len(m.acts) {
+		return nil
+	}
+	act := m.acts[m.currentAct]
+	if m.cursorRow < 0 || m.cursorRow >= len(act.rows) {
+		return nil
+	}
+	row := act.rows[m.cursorRow]
+	if m.cursorCol < 0 || m.cursorCol >= len(row) {
+		return nil
+	}
+	return &row[m.cursorCol]
 }
 
 func (m *model) moveHorizontal(delta int) {
@@ -386,6 +411,19 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func renderNodePreview(n *node) string {
+	if n == nil {
+		return "No node selected."
+	}
+
+	switch n.kind {
+	case nodeChallenge:
+		return fmt.Sprintf("Challenge: %s\nSong: %s\nSummary: %s", n.challenge.name, n.challenge.song, n.challenge.summary)
+	default:
+		return "Unknown node."
+	}
 }
 
 func main() {

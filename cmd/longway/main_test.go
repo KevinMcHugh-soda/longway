@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestGenerateRunCreatesChallengeNodes(t *testing.T) {
 	seed := int64(12345)
@@ -132,5 +135,21 @@ func TestSwitchActResetsCursor(t *testing.T) {
 	}
 	if m.cursorRow != 0 || m.cursorCol != 0 {
 		t.Fatalf("cursor not reset on prevAct: row %d col %d", m.cursorRow, m.cursorCol)
+	}
+}
+
+func TestRenderNodePreviewIncludesChallengeDetails(t *testing.T) {
+	n := &node{
+		kind: nodeChallenge,
+		challenge: &challenge{
+			name:    "TestChallenge",
+			song:    "Eye of the Tiger",
+			summary: "Play it.",
+		},
+	}
+
+	out := renderNodePreview(n)
+	if !strings.Contains(out, "TestChallenge") || !strings.Contains(out, "Eye of the Tiger") {
+		t.Fatalf("renderNodePreview missing challenge details: %s", out)
 	}
 }
