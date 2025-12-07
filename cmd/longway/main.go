@@ -41,7 +41,7 @@ var (
 				Bold(true)
 )
 
-const songsFile = "songs.csv"
+const songsFile = "downloaded_songs.csv"
 
 func newModel(songs []song) model {
 	seed := time.Now().UnixNano()
@@ -397,6 +397,8 @@ func renderNodePreview(n *node, m *model) string {
 			b.WriteString(line + "\n")
 		}
 		return strings.TrimRight(b.String(), "\n")
+	case nodeBoss:
+		return "It's the boss!!!"
 	default:
 		return "Unknown node."
 	}

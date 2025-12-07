@@ -21,6 +21,8 @@ curl 'https://api.enchor.us/search/advanced' \
 
 EOS
   JSON.parse(`#{curl}`)['data'] || []
+rescue 
+  []
 end
 
 # Accumulate this into downloaded_songs.csv
@@ -32,14 +34,15 @@ loop do
   break if page.empty?
   puts "fetching page #{page_number} (#{page.length} songs)"
   page.each do |song|
+    length_in_seconds = (song['song_length'] || 0) / 1000
     rows << {
-      id: song['id'],
+      id: song['md5'],
       title: song['name'],
       artist: song['artist'],
       album: song['album'],
       genre: song['genre'],
-      difficulty: song['difficulty'],
-      length: song['length'],
+      difficulty: song['diff_guitar'], #for now - we'll track across instruments soon enough
+      length_in_seconds: length_in_seconds,
       year: song['year'],
     }
   end
@@ -49,7 +52,7 @@ end
 CSV.open('downloaded_songs.csv', 'w') do |csv|
   csv << %w[id title artist album genre difficulty length year]
   rows.each do |row|
-    csv << [row[:id], row[:title], row[:artist], row[:album], row[:genre], row[:difficulty], row[:length], row[:year]]
+    csv << [row[:id], row[:title], row[:artist], row[:album], row[:genre], row[:difficulty], row[:length_in_seconds], row[:year]]
   end
 end
 
