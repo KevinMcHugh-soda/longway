@@ -101,8 +101,8 @@ h1 {
 }
 
 .node {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -122,6 +122,14 @@ h1 {
 .node-selected {
   outline: 2px solid #22d3ee;
   outline-offset: 2px;
+}
+
+.node-reachable {
+  cursor: pointer;
+}
+
+.node-disabled {
+  opacity: 0.35;
 }
 
 .seed {

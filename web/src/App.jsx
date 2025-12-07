@@ -1,24 +1,32 @@
 import './App.css'
 import { generateRun } from './lib/path'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 const rowSpacing = 70
 const colSpacing = 80
 const nodeSize = 32
+const maxSelectableSongs = 3
 
 function App() {
   const { acts, seed } = useMemo(() => generateRun(Date.now()), [])
   const [currentAct, setCurrentAct] = useState(0)
   const [selected, setSelected] = useState({ act: 0, row: 0, col: 0 })
+  const [phase, setPhase] = useState('idle') // idle | selecting | entering | done
+  const [choices, setChoices] = useState({})
+  const [selectedSongs, setSelectedSongs] = useState([])
+  const [starEntries, setStarEntries] = useState([])
+  const [results, setResults] = useState({})
+
+  useEffect(() => {
+    setSelected({ act: currentAct, row: 0, col: 0 })
+    setPhase('idle')
+    setSelectedSongs([])
+    setStarEntries([])
+  }, [currentAct])
 
   const current = acts[currentAct]
   const selectedNode =
     current?.rows[selected.row]?.find((n) => n.col === selected.col) ?? current?.rows[0]?.[0]
-
-  // keep selection in bounds when act changes
-  if (selected.act !== currentAct) {
-    setSelected({ act: currentAct, row: 0, col: 0 })
-  }
 
   return (
     <main className="app">
@@ -38,7 +46,7 @@ function App() {
         <div className="pane left">
           <div className="controls">
             <button
-              onClick={() => setCurrentAct((a) => Math.max(0, a - 1))}
+              onClick={() => changeAct(Math.max(0, currentAct - 1))}
               disabled={currentAct === 0}
             >
               Prev Act
@@ -47,7 +55,7 @@ function App() {
               Act {currentAct + 1} / {acts.length}
             </span>
             <button
-              onClick={() => setCurrentAct((a) => Math.min(acts.length - 1, a + 1))}
+              onClick={() => changeAct(Math.min(acts.length - 1, currentAct + 1))}
               disabled={currentAct === acts.length - 1}
             >
               Next Act
@@ -57,8 +65,12 @@ function App() {
           <section className="acts">
             <ActView
               act={current}
-              onSelect={(row, col) => setSelected({ act: currentAct, row, col })}
+              onSelect={(row, col) => handleSelectNode(row, col)}
               selected={selected}
+              reachable={{
+                row: selected.row,
+                cols: reachableCols(current, selected.row, choices, currentAct),
+              }}
             />
           </section>
         </div>
@@ -68,18 +80,89 @@ function App() {
               <p className="eyebrow">Challenge</p>
               <h3>{selectedNode.challenge?.name ?? 'Unknown'}</h3>
               <p className="lede">{selectedNode.challenge?.summary}</p>
-              {selectedNode.challenge?.songs && (
-                <ul>
-                  {selectedNode.challenge.songs.map((s) => (
-                    <li key={`${s.id}-${s.title}`}>
-                      <strong>{s.title}</strong> — {s.artist}{' '}
-                      {s.year ? <span className="meta">({s.year})</span> : null}
-                      {s.genre ? <span className="meta"> • {s.genre}</span> : null}
-                      {s.length ? <span className="meta"> • {s.length}</span> : null}
-                      {s.difficulty ? <span className="meta"> • diff {s.difficulty}/6</span> : null}
-                    </li>
-                  ))}
-                </ul>
+              <div className="actions">
+                {phase === 'idle' && (
+                  <button onClick={startChallenge} disabled={!isReachable(selected, choices, current)}>
+                    Start challenge
+                  </button>
+                )}
+                {phase === 'done' && selected.row < current.rows.length - 1 && (
+                  <button onClick={advanceRow}>Advance</button>
+                )}
+              </div>
+
+              {phase !== 'idle' && selectedNode.challenge?.songs && (
+                <>
+                  <p className="eyebrow">Songs</p>
+                  <ul>
+                    {selectedNode.challenge.songs.map((s, idx) => (
+                      <li key={`${s.id}-${s.title}`}>
+                        <label className="song-row">
+                          {phase === 'selecting' && (
+                            <input
+                              type="checkbox"
+                              checked={selectedSongs.some((sel) => sel.id === s.id)}
+                              onChange={() => toggleSongSelection(s)}
+                              disabled={
+                                !selectedSongs.some((sel) => sel.id === s.id) &&
+                                selectedSongs.length >= maxSelectableSongs
+                              }
+                            />
+                          )}
+                          <div>
+                            <strong>{s.title}</strong> — {s.artist}{' '}
+                            {s.year ? <span className="meta">({s.year})</span> : null}
+                            {s.genre ? <span className="meta"> • {s.genre}</span> : null}
+                            {s.length ? <span className="meta"> • {s.length}</span> : null}
+                            {s.difficulty ? (
+                              <span className="meta"> • diff {s.difficulty}/6</span>
+                            ) : null}
+                          </div>
+                        </label>
+                        {phase === 'entering' && selectedSongs.find((sel) => sel.id === s.id) ? (
+                          <input
+                            className="star-input"
+                            type="number"
+                            min="0"
+                            max="6"
+                            value={starEntries[selectedSongs.findIndex((sel) => sel.id === s.id)] ?? ''}
+                            onChange={(e) =>
+                              updateStarEntry(
+                                selectedSongs.findIndex((sel) => sel.id === s.id),
+                                e.target.value,
+                              )
+                            }
+                          />
+                        ) : null}
+                        {phase === 'done' &&
+                        resultsKey(selected.act, selected.row) in results &&
+                        selectedSongs.find((sel) => sel.id === s.id) ? (
+                          <span className="meta">
+                            Stars:{' '}
+                            {
+                              results[resultsKey(selected.act, selected.row)].stars[
+                                selectedSongs.findIndex((sel) => sel.id === s.id)
+                              ]
+                            }
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                  {phase === 'selecting' && (
+                    <button
+                      onClick={() => setPhase('entering')}
+                      disabled={selectedSongs.length === 0}
+                    >
+                      Enter stars
+                    </button>
+                  )}
+                  {phase === 'entering' && (
+                    <button onClick={submitStars} disabled={!starsComplete()}>
+                      Submit results
+                    </button>
+                  )}
+                </>
               )}
             </div>
           ) : (
@@ -89,9 +172,99 @@ function App() {
       </div>
     </main>
   )
+  function changeAct(next) {
+    setCurrentAct(next)
+    setSelected({ act: next, row: 0, col: 0 })
+    setPhase('idle')
+    setSelectedSongs([])
+    setStarEntries([])
+  }
+
+  function isReachable(sel, choiceMap, actData) {
+    const cols = reachableCols(actData, sel, choiceMap)
+    return cols.includes(sel.col)
+  }
+
+  function handleSelectNode(row, col) {
+    if (!isReachable({ act: currentAct, row, col }, choices, current)) return
+    if (phase !== 'idle') return
+    setSelected({ act: currentAct, row, col })
+  }
+
+  function startChallenge() {
+    setChoices((prev) => ({
+      ...prev,
+      [currentAct]: { ...(prev[currentAct] || {}), [selected.row]: selected.col },
+    }))
+    setPhase('selecting')
+    setSelectedSongs([])
+    setStarEntries([])
+  }
+
+  function toggleSongSelection(song) {
+    setSelectedSongs((prev) => {
+      const exists = prev.find((s) => s.id === song.id)
+      if (exists) {
+        return prev.filter((s) => s.id !== song.id)
+      }
+      if (prev.length >= maxSelectableSongs) return prev
+      return [...prev, song]
+    })
+  }
+
+  function updateStarEntry(idx, value) {
+    const parsed = Math.max(0, Math.min(6, Number(value)))
+    setStarEntries((prev) => {
+      const next = [...prev]
+      next[idx] = Number.isNaN(parsed) ? '' : parsed
+      return next
+    })
+  }
+
+  function starsComplete() {
+    return selectedSongs.length > 0 && selectedSongs.every((_, idx) => starEntries[idx] !== undefined && starEntries[idx] !== '')
+  }
+
+  function submitStars() {
+    if (!starsComplete()) return
+    const key = resultsKey(currentAct, selected.row)
+    setResults((prev) => ({
+      ...prev,
+      [key]: {
+        songs: selectedSongs,
+        stars: starEntries.map((v) => Number(v)),
+      },
+    }))
+    setPhase('done')
+  }
+
+  function advanceRow() {
+    const nextRow = selected.row + 1
+    if (nextRow >= current.rows.length) return
+    const prevChoice = choices[currentAct]?.[selected.row] ?? selected.col
+    const edges = current.rows[selected.row][prevChoice]?.edges || []
+    const nextCol = edges[0] ?? 0
+    setSelected({ act: currentAct, row: nextRow, col: nextCol })
+    setPhase('idle')
+    setSelectedSongs([])
+    setStarEntries([])
+  }
 }
 
-function ActView({ act, selected, onSelect }) {
+function resultsKey(act, row) {
+  return `${act}-${row}`
+}
+
+function reachableCols(act, row, choices, actIndex) {
+  if (!act) return []
+  if (row === 0) return act.rows[0].map((n) => n.col)
+  const prevChoice = choices[actIndex]?.[row - 1] ?? 0
+  const prevRow = act.rows[row - 1] || []
+  const node = prevRow.find((n) => n.col === prevChoice) || prevRow[0]
+  return node?.edges || []
+}
+
+function ActView({ act, selected, onSelect, reachable }) {
   const rows = act.rows
   const maxCols = Math.max(...rows.map((r) => r.length))
   const width = maxCols * colSpacing + nodeSize
@@ -109,6 +282,7 @@ function ActView({ act, selected, onSelect }) {
             rows={rows}
             onSelect={onSelect}
             selected={selected}
+            reachable={reachable}
           />
         ))}
       </div>
@@ -116,9 +290,11 @@ function ActView({ act, selected, onSelect }) {
   )
 }
 
-function RowView({ row, rowIdx, rows, onSelect, selected }) {
+function RowView({ row, rowIdx, rows, onSelect, selected, reachable }) {
   const y = (rows.length - 1 - rowIdx) * rowSpacing
   const nextRow = rows[rowIdx + 1]
+  const allowed =
+    reachable && reachable.row === rowIdx ? reachable.cols || [] : []
   return (
     <>
       {row.map((node) => (
@@ -129,6 +305,7 @@ function RowView({ row, rowIdx, rows, onSelect, selected }) {
           y={y}
           row={rowIdx}
           selected={selected?.row === rowIdx && selected?.col === node.col}
+          reachable={allowed.includes(node.col)}
           onSelect={() => onSelect(rowIdx, node.col)}
         />
       ))}
@@ -161,10 +338,18 @@ function RowView({ row, rowIdx, rows, onSelect, selected }) {
   )
 }
 
-function NodeView({ node, x, y, selected }) {
+function NodeView({ node, x, y, selected, reachable, onSelect }) {
   return (
-    <div className="node-wrapper" style={{ left: x, top: y }}>
-      <div className={`node node-${node.kind} ${selected ? 'node-selected' : ''}`}>
+    <div
+      className="node-wrapper"
+      style={{ left: x, top: y }}
+      onClick={reachable ? onSelect : undefined}
+    >
+      <div
+        className={`node node-${node.kind} ${selected ? 'node-selected' : ''} ${
+          reachable ? 'node-reachable' : 'node-disabled'
+        }`}
+      >
         {node.kind === 'boss' ? 'B' : 'C'}
       </div>
     </div>
