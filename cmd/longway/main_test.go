@@ -30,6 +30,12 @@ func TestGenerateRunCreatesChallengeNodes(t *testing.T) {
 				t.Fatalf("act %d row %d has no nodes", a.index, rowIdx)
 			}
 			for colIdx, n := range row {
+				if rowIdx == len(a.rows)-1 {
+					if n.kind != nodeBoss {
+						t.Fatalf("act %d final row col %d kind = %v, want boss", a.index, colIdx, n.kind)
+					}
+					continue
+				}
 				if n.kind != nodeChallenge {
 					t.Fatalf("act %d row %d col %d kind = %v, want %v", a.index, rowIdx, colIdx, n.kind, nodeChallenge)
 				}
@@ -292,5 +298,42 @@ func TestPickPoolSizePerAct(t *testing.T) {
 	clamped := pickPoolSize(1, 5, rng)
 	if clamped != 5 {
 		t.Fatalf("pool size should clamp to available: got %d want 5", clamped)
+	}
+}
+
+func TestBossIsLastRow(t *testing.T) {
+	seed := int64(123)
+	songs := []song{
+		{title: "Bohemian Rhapsody", artist: "Queen", difficulty: 6, seconds: 355},
+		{title: "Other", artist: "X", difficulty: 3, seconds: 200},
+	}
+	acts := generateRun(seed, songs)
+	for _, a := range acts {
+		last := a.rows[len(a.rows)-1]
+		if len(last) != 1 || last[0].kind != nodeBoss {
+			t.Fatalf("last row not boss: %+v", last)
+		}
+		if last[0].challenge == nil || last[0].challenge.songs[0].title != "Bohemian Rhapsody" {
+			t.Fatalf("boss challenge missing Bohemian Rhapsody: %+v", last[0].challenge)
+		}
+		// verify connectivity: every node except first row should have incoming edge
+		incoming := make([][]int, len(a.rows))
+		for r := 1; r < len(a.rows); r++ {
+			incoming[r] = make([]int, len(a.rows[r]))
+		}
+		for r := 0; r < len(a.rows)-1; r++ {
+			for _, n := range a.rows[r] {
+				for _, e := range n.edges {
+					incoming[r+1][e]++
+				}
+			}
+		}
+		for r := 1; r < len(incoming); r++ {
+			for c, v := range incoming[r] {
+				if v == 0 {
+					t.Fatalf("row %d col %d has no incoming edge", r, c)
+				}
+			}
+		}
 	}
 }

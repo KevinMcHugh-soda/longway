@@ -17,12 +17,19 @@ func generateAct(index int, rng *rand.Rand, songs []song) act {
 	rows := make([][]node, rowsPerAct)
 	for row := 0; row < rowsPerAct; row++ {
 		count := minNodesPerRow + rng.Intn(maxNodesPerRow-minNodesPerRow+1)
+		if row == rowsPerAct-1 {
+			count = 1 // boss
+		}
 		nodes := make([]node, count)
 		for i := range nodes {
 			nodes[i] = node{
 				col:       i,
 				kind:      nodeChallenge,
 				challenge: newChallenge(actSongs, rng, poolSize),
+			}
+			if row == rowsPerAct-1 {
+				nodes[i].kind = nodeBoss
+				nodes[i].challenge = bossChallenge(songs)
 			}
 		}
 		if row > 0 {
@@ -40,24 +47,32 @@ func generateAct(index int, rng *rand.Rand, songs []song) act {
 func connectRows(prev []node, next []node, rng *rand.Rand) {
 	incoming := make([]int, len(next))
 
-	for i := range prev {
-		targets := pickTargets(len(next), rng)
-		prev[i].edges = append(prev[i].edges, targets...)
-		for _, t := range targets {
-			incoming[t]++
-		}
+	// ensure every next node has an inbound edge by building a spanning pass first
+	for j := range next {
+		src := rng.Intn(len(prev))
+		prev[src].edges = append(prev[src].edges, j)
+		incoming[j]++
 	}
 
-	for j, seen := range incoming {
-		if seen == 0 {
-			src := rng.Intn(len(prev))
-			prev[src].edges = append(prev[src].edges, j)
+	// add extra edges for branching
+	for i := range prev {
+		targets := pickTargets(len(next), rng)
+		for _, t := range targets {
+			prev[i].edges = append(prev[i].edges, t)
+			incoming[t]++
 		}
 	}
 }
 
 func pickTargets(nextCount int, rng *rand.Rand) []int {
-	targetCount := 1 + rng.Intn(2) // 1 or 2 targets
+	if nextCount <= 0 {
+		return nil
+	}
+	maxTargets := 1
+	if nextCount > 1 {
+		maxTargets = 2
+	}
+	targetCount := 1 + rng.Intn(maxTargets) // up to maxTargets unique targets
 	targets := make([]int, 0, targetCount)
 	seen := make(map[int]struct{})
 	for len(targets) < targetCount {

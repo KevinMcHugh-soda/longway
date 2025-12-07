@@ -196,6 +196,25 @@ func newTestChallenge(songs []song, poolSize int) *challenge {
 	}
 }
 
+func bossChallenge(songs []song) *challenge {
+	pool := songs
+	if len(pool) == 0 {
+		pool = []song{fallbackSong()}
+	}
+	var boss song
+	if found, ok := findSongByTitle(pool, "Bohemian Rhapsody"); ok {
+		boss = found
+	} else {
+		boss = fallbackSong()
+	}
+	return &challenge{
+		id:      "boss-bohemian",
+		name:    "BossChallenge",
+		summary: "Final showdown: play Bohemian Rhapsody.",
+		songs:   []song{boss},
+	}
+}
+
 func sampleSongs(pool []song, count int, rng *rand.Rand) []song {
 	if len(pool) <= count {
 		return append([]song{}, pool...)

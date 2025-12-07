@@ -17,6 +17,7 @@ type nodeKind int
 const (
 	nodeUnknown nodeKind = iota
 	nodeChallenge
+	nodeBoss
 )
 
 const (

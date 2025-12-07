@@ -309,6 +309,8 @@ func nodeGlyph(n node) rune {
 	switch n.kind {
 	case nodeChallenge:
 		return 'C'
+	case nodeBoss:
+		return 'B'
 	default:
 		return 'o'
 	}
