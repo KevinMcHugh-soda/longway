@@ -10,7 +10,7 @@ const maxStars = 6
 
 function App() {
   const { acts, seed } = useMemo(() => generateRun(Date.now()), [])
-  const [currentAct, setCurrentAct] = useState(0)
+  const [currentAct] = useState(0)
   const [selected, setSelected] = useState({ act: 0, row: 0, col: 0 })
   const [phase, setPhase] = useState('idle') // idle | selecting | entering | done
   const [currentRow, setCurrentRow] = useState(0)
@@ -42,24 +42,6 @@ function App() {
 
       <div className="layout">
         <div className="pane left">
-          <div className="controls">
-            <button
-              onClick={() => changeAct(Math.max(0, currentAct - 1))}
-              disabled={currentAct === 0}
-            >
-              Prev Act
-            </button>
-            <span>
-              Act {currentAct + 1} / {acts.length}
-            </span>
-            <button
-              onClick={() => changeAct(Math.min(acts.length - 1, currentAct + 1))}
-              disabled={currentAct === acts.length - 1}
-            >
-              Next Act
-            </button>
-          </div>
-
           <section className="acts">
             <ActView
               act={current}
@@ -89,9 +71,6 @@ function App() {
                   >
                     Start challenge
                   </button>
-                )}
-                {phase === 'done' && currentRow < current.rows.length - 1 && (
-                  <button onClick={advanceRow}>Advance</button>
                 )}
               </div>
 
@@ -178,15 +157,6 @@ function App() {
       </div>
     </main>
   )
-  function changeAct(next) {
-    setCurrentAct(next)
-    setSelected({ act: next, row: 0, col: 0 })
-    setPhase('idle')
-    setCurrentRow(0)
-    setSelectedSongs([])
-    setStarEntries([])
-  }
-
   function isReachable(sel, choiceMap, actData, row, actIndex) {
     if (sel.row !== row) return false
     const cols = reachableCols(actData, row, choiceMap, actIndex)
