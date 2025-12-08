@@ -200,7 +200,7 @@ h1 {
   min-height: 10%;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
@@ -213,6 +213,20 @@ h1 {
   font-weight: 700;
   cursor: pointer;
   min-width: 140px;
+}
+
+.actions-bar .ghost {
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid #1f2937;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.actions-left {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .actions-bar .primary:disabled {

@@ -12,7 +12,8 @@ const STORAGE_KEY = 'longway-save-v1'
 function App() {
   const savedState = useMemo(() => readSavedState(), [])
   const initialSeed = savedState?.seed ?? Date.now()
-  const { acts, seed } = useMemo(() => generateRun(initialSeed), [initialSeed])
+  const [seed, setSeed] = useState(initialSeed)
+  const { acts } = useMemo(() => generateRun(seed), [seed])
   const [currentAct, setCurrentAct] = useState(savedState?.currentAct ?? 0)
   const [selected, setSelected] = useState(
     clampSelection(savedState?.selected ?? { act: 0, row: 0, col: 0 }, acts),
@@ -184,6 +185,11 @@ function App() {
             <p className="lede">Select a node to see details.</p>
           )}
           <div className="actions-bar">
+            <div className="actions-left">
+              <button className="ghost" type="button" onClick={startNewRun}>
+                New game
+              </button>
+            </div>
             {action ? (
               <button
                 className="primary"
@@ -292,6 +298,19 @@ function App() {
   function advanceAct() {
     if (currentAct >= acts.length - 1) return
     setCurrentAct((prev) => Math.min(prev + 1, acts.length - 1))
+  }
+
+  function startNewRun() {
+    const nextSeed = Date.now()
+    setSeed(nextSeed)
+    setCurrentAct(0)
+    setChoices({})
+    setResults({})
+    setSelected({ act: 0, row: 0, col: 0 })
+    setCurrentRow(0)
+    setPhase('idle')
+    setSelectedSongs([])
+    setStarEntries([])
   }
 }
 
