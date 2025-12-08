@@ -119,13 +119,19 @@ function App() {
                               <span className="checkbox">{isSelected ? '✓' : ''}</span>
                             )}
                             <div className="song-info">
-                              <strong>{s.title}</strong> — {s.artist}{' '}
-                              {s.year ? <span className="meta">({s.year})</span> : null}
-                              {s.genre ? <span className="meta"> • {s.genre}</span> : null}
-                              {s.length ? <span className="meta"> • {s.length}</span> : null}
-                              {s.difficulty ? (
-                                <span className="meta"> • diff {s.difficulty}/6</span>
-                              ) : null}
+                              <div className="song-main">
+                                <span>
+                                  <strong>{s.title}</strong> — {s.artist}{' '}
+                                  {s.year ? <span className="meta">({s.year})</span> : null}
+                                </span>
+                                <span className="song-meta">
+                                  {s.genre ? <span className="meta">{s.genre}</span> : null}
+                                  {s.length ? <span className="meta"> • {s.length}</span> : null}
+                                  {s.difficulty ? (
+                                    <span className="meta"> • {renderStars(s.difficulty)}</span>
+                                  ) : null}
+                                </span>
+                              </div>
                             </div>
                           </button>
                           {phase === 'entering' && isSelected ? (
@@ -372,6 +378,10 @@ function StarPicker({ value, onChange, max }) {
       ))}
     </div>
   )
+}
+
+function renderStars(count) {
+  return '⭐️'.repeat(Math.max(1, Math.min(6, Math.round(count))))
 }
 
 export default App

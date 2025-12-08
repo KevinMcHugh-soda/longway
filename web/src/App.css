@@ -239,6 +239,18 @@ h1 {
 
 .song-info {
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+  width: 100%;
+}
+
+.song-main {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.song-meta {
+  color: #94a3b8;
+  white-space: nowrap;
 }
