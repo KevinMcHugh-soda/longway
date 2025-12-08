@@ -89,11 +89,18 @@ function App() {
         <div>
           <h1>A Long Way To The Top</h1>
         </div>
-        <div className="seed">
-          <div>Seed: {seed}</div>
-          <div className="autosave">
-            Autosave: {loadedFromStorage ? 'resumed' : 'new run'}
-            {lastSaved ? ` • saved ${new Date(lastSaved).toLocaleTimeString()}` : ''}
+        <div className="toolbar">
+          <div className="seed">
+            <div>Seed: {seed}</div>
+            <div className="autosave">
+              Autosave: {loadedFromStorage ? 'resumed' : 'new run'}
+              {lastSaved ? ` • saved ${new Date(lastSaved).toLocaleTimeString()}` : ''}
+            </div>
+          </div>
+          <div className="options">
+            <button className="ghost" type="button" onClick={startNewRun}>
+              New game
+            </button>
           </div>
         </div>
       </header>
@@ -190,11 +197,6 @@ function App() {
             <p className="lede">Select a node to see details.</p>
           )}
           <div className="actions-bar">
-            <div className="actions-left">
-              <button className="ghost" type="button" onClick={startNewRun}>
-                New game
-              </button>
-            </div>
             {action ? (
               <button
                 className="primary"
