@@ -281,20 +281,36 @@ function parseSongs(csv) {
   const lines = csv.trim().split('\n')
   const header = lines.shift().split(',')
   const idx = (key) => header.indexOf(key)
+  const idIdx = idx('id')
+  const titleIdx = idx('title')
+  const artistIdx = idx('artist')
+  const albumIdx = idx('album')
+  const genreIdx = idx('genre')
+  const difficultyIdx = idx('difficulty')
+  const lengthIdx = idx('length')
+  const yearIdx = idx('year')
+  const secondsIdx = idx('seconds')
+
   return lines
     .map((line) => {
       const cols = line.split(',')
       const clean = (str) => (str || '').replace(/^"+|"+$/g, '').replace(/""/g, '"').trim()
+      const length = clean(cols[lengthIdx])
+      const secondsFromCsv = secondsIdx >= 0 ? Number(clean(cols[secondsIdx])) : undefined
+      const seconds =
+        secondsFromCsv && !Number.isNaN(secondsFromCsv) && secondsFromCsv > 0
+          ? secondsFromCsv
+          : parseSeconds(length)
       return {
-        id: clean(cols[idx('id')]) || `${Math.random()}`,
-        title: clean(cols[idx('title')]),
-        artist: clean(cols[idx('artist')]),
-        album: clean(cols[idx('album')]),
-        genre: clean(cols[idx('genre')]),
-        difficulty: clampDifficulty(Number(cols[idx('difficulty')])),
-        length: clean(cols[idx('length')]),
-        year: Number(clean(cols[idx('year')])) || undefined,
-        seconds: parseSeconds(clean(cols[idx('length')])),
+        id: clean(cols[idIdx]) || `${Math.random()}`,
+        title: clean(cols[titleIdx]),
+        artist: clean(cols[artistIdx]),
+        album: clean(cols[albumIdx]),
+        genre: clean(cols[genreIdx]),
+        difficulty: clampDifficulty(Number(cols[difficultyIdx])),
+        length,
+        year: Number(clean(cols[yearIdx])) || undefined,
+        seconds,
       }
     })
     .filter((s) => s.title)
@@ -302,6 +318,10 @@ function parseSongs(csv) {
 
 function parseSeconds(len) {
   if (!len) return 0
+  if (!len.includes(':')) {
+    const asNumber = Number(len)
+    if (!Number.isNaN(asNumber)) return asNumber
+  }
   const [m, s] = len.split(':').map(Number)
   if (Number.isNaN(m) || Number.isNaN(s)) return 0
   return m * 60 + s

@@ -1,5 +1,6 @@
 require 'json'
 require 'csv'
+require 'fileutils'
 
 def get_page(page_number)
   curl = <<-EOS
@@ -52,18 +53,35 @@ loop do
       genre: song['genre']&.strip,
       difficulty: difficulty,
       length: length_str,
-      seconds: length_in_seconds,
       year: song['year'],
+      seconds: length_in_seconds,
     }
   end
   page_number += 1
 end
 
-CSV.open('downloaded_songs.csv', 'w') do |csv|
-  csv << %w[id title artist album genre difficulty length seconds year]
+output = 'downloaded_songs.csv'
+CSV.open(output, 'w') do |csv|
+  csv << %w[id title artist album genre difficulty length year seconds]
   rows.each do |row|
-    csv << [row[:id], row[:title], row[:artist], row[:album], row[:genre], row[:difficulty], row[:length], row[:seconds], row[:year]]
+    csv << [
+      row[:id],
+      row[:title],
+      row[:artist],
+      row[:album],
+      row[:genre],
+      row[:difficulty],
+      row[:length],
+      row[:year],
+      row[:seconds],
+    ]
   end
 end
 
-puts "Wrote #{rows.length} songs to downloaded_songs.csv"
+puts "Wrote #{rows.length} songs to #{output}"
+
+web_output = File.join('web', 'src', 'data', 'downloaded_songs.csv')
+if File.exist?(web_output)
+  FileUtils.cp(output, web_output)
+  puts "Copied CSV to #{web_output}"
+end

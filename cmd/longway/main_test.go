@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -152,6 +153,30 @@ func TestLoadSongsReadsCSV(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("expected Eye of the Tiger in songs.csv")
+	}
+}
+
+func TestLoadSongsSupportsSecondsColumn(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.csv")
+	contents := "id,title,artist,album,genre,difficulty,length,year,seconds\n" +
+		"id-1,Song One,Artist,Album,Rock,4,6:00,2000,360\n"
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+		t.Fatalf("write temp csv: %v", err)
+	}
+
+	songs, err := loadSongs(path)
+	if err != nil {
+		t.Fatalf("loadSongs error: %v", err)
+	}
+	if len(songs) != 1 {
+		t.Fatalf("expected 1 song, got %d", len(songs))
+	}
+	if songs[0].seconds != 360 {
+		t.Fatalf("expected seconds=360, got %d", songs[0].seconds)
+	}
+	if songs[0].length != "6:00" {
+		t.Fatalf("expected length to be preserved, got %s", songs[0].length)
 	}
 }
 

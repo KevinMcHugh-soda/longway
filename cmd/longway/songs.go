@@ -32,6 +32,7 @@ func loadSongs(path string) ([]song, error) {
 	reader.TrimLeadingSpace = true
 
 	var songs []song
+	header := map[string]int{}
 	for {
 		rec, err := reader.Read()
 		if err == io.EOF {
@@ -43,24 +44,17 @@ func loadSongs(path string) ([]song, error) {
 		if len(rec) == 0 {
 			continue
 		}
-		if isHeader(rec) {
-			continue
+		if len(header) == 0 {
+			header = detectHeader(rec)
+			if len(header) > 0 {
+				continue
+			}
 		}
-		if len(rec) < 5 {
-			return nil, fmt.Errorf("invalid song record (need at least id,title,artist,album,genre): %v", rec)
+		s, err := parseSong(rec, header)
+		if err != nil {
+			return nil, err
 		}
-
-		songs = append(songs, song{
-			id:         strings.TrimSpace(rec[0]),
-			title:      strings.TrimSpace(rec[1]),
-			artist:     strings.TrimSpace(rec[2]),
-			album:      field(rec, 3),
-			genre:      field(rec, 4),
-			difficulty: parseDifficulty(field(rec, 5)),
-			length:     field(rec, 6),
-			year:       parseYear(field(rec, 7)),
-			seconds:    parseDurationToSeconds(field(rec, 6)),
-		})
+		songs = append(songs, s)
 	}
 
 	if len(songs) == 0 {
@@ -81,11 +75,65 @@ func isHeader(rec []string) bool {
 		strings.EqualFold(strings.TrimSpace(rec[4]), "genre")
 }
 
+func detectHeader(rec []string) map[string]int {
+	if isHeader(rec) {
+		result := make(map[string]int)
+		for i, col := range rec {
+			result[strings.ToLower(strings.TrimSpace(col))] = i
+		}
+		return result
+	}
+	return map[string]int{}
+}
+
 func field(rec []string, idx int) string {
 	if idx >= len(rec) {
 		return ""
 	}
 	return strings.TrimSpace(rec[idx])
+}
+
+func parseSong(rec []string, header map[string]int) (song, error) {
+	get := func(key string, fallback int) string {
+		if idx, ok := header[strings.ToLower(key)]; ok {
+			return field(rec, idx)
+		}
+		if fallback < 0 {
+			return ""
+		}
+		return field(rec, fallback)
+	}
+
+	id := get("id", 0)
+	title := get("title", 1)
+	artist := get("artist", 2)
+	album := get("album", 3)
+	genre := get("genre", 4)
+
+	if id == "" || title == "" || artist == "" {
+		return song{}, fmt.Errorf("invalid song record (need id,title,artist): %v", rec)
+	}
+
+	length := get("length", 6)
+	secondsVal := parseDurationToSeconds(length)
+	secondsField := get("seconds", -1)
+	if secondsField != "" {
+		if parsed, err := strconv.Atoi(secondsField); err == nil {
+			secondsVal = parsed
+		}
+	}
+
+	return song{
+		id:         id,
+		title:      title,
+		artist:     artist,
+		album:      album,
+		genre:      genre,
+		difficulty: parseDifficulty(get("difficulty", 5)),
+		length:     length,
+		year:       parseYear(get("year", 7)),
+		seconds:    secondsVal,
+	}, nil
 }
 
 func parseYear(val string) int {
@@ -102,6 +150,12 @@ func parseYear(val string) int {
 func parseDurationToSeconds(val string) int {
 	if val == "" {
 		return 0
+	}
+	if !strings.Contains(val, ":") {
+		seconds, err := strconv.Atoi(val)
+		if err == nil {
+			return seconds
+		}
 	}
 	parts := strings.Split(val, ":")
 	if len(parts) != 2 {
