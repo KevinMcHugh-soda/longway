@@ -1,31 +1,60 @@
 import './App.css'
 import { generateRun } from './lib/path'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const rowSpacing = 70
 const colSpacing = 80
 const nodeSize = 32
 const maxSelectableSongs = 3
 const maxStars = 6
+const STORAGE_KEY = 'longway-save-v1'
 
 function App() {
-  const { acts, seed } = useMemo(() => generateRun(Date.now()), [])
-  const [currentAct, setCurrentAct] = useState(0)
-  const [selected, setSelected] = useState({ act: 0, row: 0, col: 0 })
-  const [phase, setPhase] = useState('idle') // idle | selecting | entering | done
-  const [currentRow, setCurrentRow] = useState(0)
-  const [choices, setChoices] = useState({})
-  const [selectedSongs, setSelectedSongs] = useState([])
-  const [starEntries, setStarEntries] = useState([])
-  const [results, setResults] = useState({})
+  const savedState = useMemo(() => readSavedState(), [])
+  const initialSeed = savedState?.seed ?? Date.now()
+  const { acts, seed } = useMemo(() => generateRun(initialSeed), [initialSeed])
+  const [currentAct, setCurrentAct] = useState(savedState?.currentAct ?? 0)
+  const [selected, setSelected] = useState(
+    clampSelection(savedState?.selected ?? { act: 0, row: 0, col: 0 }, acts),
+  )
+  const [phase, setPhase] = useState(savedState?.phase ?? 'idle') // idle | selecting | entering | done
+  const [currentRow, setCurrentRow] = useState(
+    clampRow(savedState?.currentRow ?? 0, acts, savedState?.currentAct ?? 0),
+  )
+  const [choices, setChoices] = useState(savedState?.choices ?? {})
+  const [selectedSongs, setSelectedSongs] = useState(() =>
+    restoreSelectedSongs(savedState?.selectedSongIds, acts, savedState?.selected),
+  )
+  const [starEntries, setStarEntries] = useState(savedState?.starEntries ?? [])
+  const [results, setResults] = useState(() => restoreResults(savedState?.results))
+  const hydrated = useRef(false)
 
   useEffect(() => {
+    if (!hydrated.current && savedState) {
+      hydrated.current = true
+      return
+    }
+    hydrated.current = true
     setSelected({ act: currentAct, row: 0, col: 0 })
     setPhase('idle')
     setSelectedSongs([])
     setStarEntries([])
     setCurrentRow(0)
-  }, [currentAct])
+  }, [currentAct, savedState])
+
+  useEffect(() => {
+    persistState({
+      seed,
+      currentAct,
+      selected,
+      phase,
+      currentRow,
+      choices,
+      selectedSongIds: selectedSongs.map((s) => s.id),
+      starEntries,
+      results: serializeResults(results),
+    })
+  }, [seed, currentAct, selected, phase, currentRow, choices, selectedSongs, starEntries, results])
 
   const current = acts[currentAct]
   const selectedNode =
@@ -226,7 +255,6 @@ function App() {
     setResults((prev) => ({
       ...prev,
       [key]: {
-        songs: selectedSongs,
         stars: starEntries.map((v) => Number(v)),
       },
     }))
@@ -419,4 +447,69 @@ export function actionForState({
     return { kind: 'advance', label: 'Advance', disabled: false }
   }
   return null
+}
+
+export function persistState(state) {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch (_) {
+    // ignore storage errors
+  }
+}
+
+export function readSavedState() {
+  if (typeof localStorage === 'undefined') return null
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch (_) {
+    return null
+  }
+}
+
+export function clampSelection(sel, acts) {
+  const actIndex = Math.min(Math.max(0, sel?.act ?? 0), acts.length - 1)
+  const act = acts[actIndex]
+  const rows = act?.rows ?? []
+  const rowIndex = Math.min(Math.max(0, sel?.row ?? 0), rows.length - 1)
+  const row = rows[rowIndex] || []
+  const colValue =
+    row.find((n) => n.col === (sel?.col ?? 0))?.col ?? (row[0]?.col ?? 0)
+  return { act: actIndex, row: rowIndex, col: colValue }
+}
+
+export function clampRow(row, acts, actIndex) {
+  const act = acts[Math.min(Math.max(0, actIndex), acts.length - 1)]
+  if (!act) return 0
+  return Math.min(Math.max(0, row), act.rows.length - 1)
+}
+
+export function restoreSelectedSongs(ids, acts, selected) {
+  if (!ids || !Array.isArray(ids) || !selected) return []
+  const act = acts[selected.act]
+  const row = act?.rows?.[selected.row]
+  const node = row?.find((n) => n.col === selected.col)
+  const songs = node?.challenge?.songs || []
+  const byId = new Map(songs.map((s) => [s.id, s]))
+  return ids.map((id) => byId.get(id)).filter(Boolean)
+}
+
+export function serializeResults(results) {
+  if (!results) return {}
+  const out = {}
+  Object.entries(results).forEach(([key, value]) => {
+    out[key] = { stars: value.stars }
+  })
+  return out
+}
+
+export function restoreResults(saved) {
+  if (!saved || typeof saved !== 'object') return {}
+  const out = {}
+  Object.entries(saved).forEach(([key, value]) => {
+    out[key] = { stars: value?.stars ?? [] }
+  })
+  return out
 }

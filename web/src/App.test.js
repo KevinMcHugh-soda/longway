@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { actionForState, isSongToggleAllowed, renderDifficulty, renderStars } from './App'
+import {
+  actionForState,
+  clampSelection,
+  restoreResults,
+  restoreSelectedSongs,
+  serializeResults,
+  isSongToggleAllowed,
+  renderDifficulty,
+  renderStars,
+} from './App'
 
 describe('song selection gating', () => {
   it('disables toggling once selecting phase ends', () => {
@@ -93,5 +102,43 @@ describe('actionForState', () => {
         startEnabled: false,
       }),
     ).toMatchObject({ kind: 'nextAct', disabled: false })
+  })
+})
+
+describe('selection hydration helpers', () => {
+  const acts = [
+    {
+      rows: [
+        [
+          {
+            col: 0,
+            challenge: {
+              songs: [
+                { id: 'a', title: 'A' },
+                { id: 'b', title: 'B' },
+              ],
+            },
+          },
+        ],
+      ],
+    },
+  ]
+
+  it('restores selected songs by id', () => {
+    const restored = restoreSelectedSongs(['b', 'missing'], acts, { act: 0, row: 0, col: 0 })
+    expect(restored).toHaveLength(1)
+    expect(restored[0].id).toBe('b')
+  })
+
+  it('clamps selection within act bounds', () => {
+    const sel = clampSelection({ act: 5, row: 5, col: 99 }, acts)
+    expect(sel).toEqual({ act: 0, row: 0, col: 0 })
+  })
+
+  it('serializes and restores results', () => {
+    const serialized = serializeResults({ '0-0': { stars: [1, 2, 3], songs: [] } })
+    expect(serialized['0-0'].stars).toEqual([1, 2, 3])
+    const restored = restoreResults(serialized)
+    expect(restored['0-0'].stars).toEqual([1, 2, 3])
   })
 })
