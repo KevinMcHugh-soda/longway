@@ -109,16 +109,16 @@ function App() {
                       const isSelected = selectedIdx !== -1
                       return (
                         <li key={`${s.id}-${s.title}`}>
-                          <label className="song-row">
+                          <button
+                            type="button"
+                            className={`song-row ${isSelected ? 'song-row-selected' : ''}`}
+                            onClick={() => toggleSongSelection(s)}
+                            disabled={!isSelected && selectedSongs.length >= maxSelectableSongs}
+                          >
                             {phase === 'selecting' && (
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => toggleSongSelection(s)}
-                                disabled={!isSelected && selectedSongs.length >= maxSelectableSongs}
-                              />
+                              <span className="checkbox">{isSelected ? '✓' : ''}</span>
                             )}
-                            <div>
+                            <div className="song-info">
                               <strong>{s.title}</strong> — {s.artist}{' '}
                               {s.year ? <span className="meta">({s.year})</span> : null}
                               {s.genre ? <span className="meta"> • {s.genre}</span> : null}
@@ -127,7 +127,7 @@ function App() {
                                 <span className="meta"> • diff {s.difficulty}/6</span>
                               ) : null}
                             </div>
-                          </label>
+                          </button>
                           {phase === 'entering' && isSelected ? (
                             <StarPicker
                               value={starEntries[selectedIdx]}
