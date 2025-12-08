@@ -8,9 +8,9 @@ const minSelectable = 2
 const maxSelectable = 5
 
 const poolBounds = {
-  1: { min: 2, max: 5 },
-  2: { min: 2, max: 5 },
-  3: { min: 2, max: 5 },
+  1: { min: 9, max: 12 },
+  2: { min: 6, max: 9 },
+  3: { min: 3, max: 5 },
 }
 
 export const nodeKinds = {
@@ -32,7 +32,6 @@ export function generateRun(seed = Date.now()) {
 
 function generateAct(index, rng) {
   const filteredSongs = applyActDifficultyConstraints(index, catalog)
-  const poolSize = pickPoolSize(index, filteredSongs.length, rng)
   const rows = []
 
   for (let row = 0; row < rowsPerAct; row++) {
@@ -53,10 +52,14 @@ function generateAct(index, rng) {
     const nodes = []
     for (let col = 0; col < count; col++) {
       const isBoss = row === rowsPerAct - 1
+      const poolSize = pickPoolSize(index, filteredSongs.length, rng)
+      const selectCount = pickSelectCount(rng)
       nodes.push({
         col,
         kind: isBoss ? nodeKinds.boss : nodeKinds.challenge,
-        challenge: isBoss ? bossChallenge(index) : challenge(filteredSongs, poolSize, rng, index),
+        challenge: isBoss
+          ? bossChallenge(index)
+          : challenge(filteredSongs, poolSize, selectCount, rng, index),
         edges: [],
       })
     }
@@ -127,7 +130,7 @@ function connectRows(prev, next, rng) {
   })
 }
 
-function challenge(pool, poolSize, rng, actIndex) {
+function challenge(pool, poolSize, selectCount, rng, actIndex) {
   const creators = [
     shortSongChallenge,
     mediumSongChallenge,
@@ -139,14 +142,16 @@ function challenge(pool, poolSize, rng, actIndex) {
   ]
   const shuffled = shuffle(creators, rng)
   for (const fn of shuffled) {
-    const c = fn(pool, poolSize, rng, actIndex)
+    const c = fn(pool, poolSize, rng, actIndex, selectCount)
     if (c) return c
   }
-  const songs = sample(pool, poolSize, rng)
+  const songs = sample(pool, Math.max(selectCount, poolSize), rng)
+  const finalSelect = clampSelectCount(selectCount, songs.length)
   return {
     name: 'Challenge',
-    summary: summaryForSongs(songs.length),
+    summary: summaryForSongs(songs.length, finalSelect),
     songs,
+    selectCount: finalSelect,
     goal: actGoal(actIndex),
   }
 }
@@ -157,6 +162,7 @@ function bossChallenge(actIndex) {
     name: 'Boss',
     summary: 'Final showdown: Bohemian Rhapsody.',
     songs: [boss],
+    selectCount: 1,
     goal: actGoal(actIndex),
   }
 }
@@ -177,15 +183,19 @@ function pickPoolSize(actIndex, available, rng) {
   return min + rngInt(rng, max - min + 1)
 }
 
+function pickSelectCount(rng) {
+  return minSelectable + rngInt(rng, maxSelectable - minSelectable + 1)
+}
+
 function sample(pool, count, rng) {
   if (pool.length <= count) return [...pool]
   const indices = pickDistinct(pool.length, count, rng)
   return indices.map((i) => pool[i])
 }
 
-function summaryForSongs(poolSize, suffix = '') {
+function summaryForSongs(poolSize, selectCount, suffix = '') {
   const tail = suffix ? ` ${suffix}` : ''
-  return `Pick ${minSelectable}–${maxSelectable} of these ${poolSize} tracks${tail}.`
+  return `Pick ${selectCount} of these ${poolSize} tracks${tail}.`
 }
 
 function actGoal(actIndex) {
@@ -203,7 +213,7 @@ export {
   actGoal,
 }
 
-function decadeChallenge(pool, poolSize, rng, actIndex) {
+function decadeChallenge(pool, poolSize, rng, actIndex, selectCount) {
   const byDecade = pool.reduce((acc, s) => {
     if (!s.year) return acc
     const dec = Math.floor(s.year / 10) * 10
@@ -214,16 +224,19 @@ function decadeChallenge(pool, poolSize, rng, actIndex) {
   const eligible = Object.entries(byDecade).filter(([, list]) => list.length >= 3)
   if (!eligible.length) return null
   const [decade, list] = eligible[rngInt(rng, eligible.length)]
-  const songs = sample(list, Math.min(poolSize, list.length), rng)
+  const sampleSize = Math.max(selectCount, Math.min(poolSize, list.length))
+  const songs = sample(list, sampleSize, rng)
+  const finalSelect = clampSelectCount(selectCount, songs.length)
   return {
     name: 'DecadeChallenge',
-    summary: summaryForSongs(songs.length, `from the ${decade}s`),
+    summary: summaryForSongs(songs.length, finalSelect, `from the ${decade}s`),
     songs,
+    selectCount: finalSelect,
     goal: actGoal(actIndex),
   }
 }
 
-function difficultyChallenge(pool, poolSize, rng, actIndex) {
+function difficultyChallenge(pool, poolSize, rng, actIndex, selectCount) {
   const byLevel = pool.reduce((acc, s) => {
     const level = clampDifficulty(s.difficulty)
     acc[level] = acc[level] || []
@@ -233,16 +246,19 @@ function difficultyChallenge(pool, poolSize, rng, actIndex) {
   const eligible = Object.entries(byLevel).filter(([, list]) => list.length >= 3)
   if (!eligible.length) return null
   const [level, list] = eligible[rngInt(rng, eligible.length)]
-  const songs = sample(list, Math.min(poolSize, list.length), rng)
+  const sampleSize = Math.max(selectCount, Math.min(poolSize, list.length))
+  const songs = sample(list, sampleSize, rng)
+  const finalSelect = clampSelectCount(selectCount, songs.length)
   return {
     name: 'DifficultyChallenge',
-    summary: summaryForSongs(songs.length, `at difficulty ${level}`),
+    summary: summaryForSongs(songs.length, finalSelect, `at difficulty ${level}`),
     songs,
+    selectCount: finalSelect,
     goal: actGoal(actIndex),
   }
 }
 
-function genreChallenge(pool, poolSize, rng, actIndex) {
+function genreChallenge(pool, poolSize, rng, actIndex, selectCount) {
   const byGenre = pool.reduce((acc, s) => {
     if (!s.genre) return acc
     const key = s.genre.toLowerCase()
@@ -253,59 +269,74 @@ function genreChallenge(pool, poolSize, rng, actIndex) {
   const eligible = Object.entries(byGenre).filter(([, list]) => list.length >= 3)
   if (!eligible.length) return null
   const [genre, list] = eligible[rngInt(rng, eligible.length)]
-  const songs = sample(list, Math.min(poolSize, list.length), rng)
+  const sampleSize = Math.max(selectCount, Math.min(poolSize, list.length))
+  const songs = sample(list, sampleSize, rng)
+  const finalSelect = clampSelectCount(selectCount, songs.length)
   return {
     name: 'GenreChallenge',
-    summary: summaryForSongs(songs.length, `${genre} tracks`),
+    summary: summaryForSongs(songs.length, finalSelect, `${genre} tracks`),
     songs,
+    selectCount: finalSelect,
     goal: actGoal(actIndex),
   }
 }
 
-function longSongChallenge(pool, poolSize, rng, actIndex) {
+function longSongChallenge(pool, poolSize, rng, actIndex, selectCount) {
   const longSongs = pool.filter((s) => s.seconds > 300)
   if (longSongs.length < 3) return null
-  const songs = sample(longSongs, Math.min(poolSize, longSongs.length), rng)
+  const sampleSize = Math.max(selectCount, Math.min(poolSize, longSongs.length))
+  const songs = sample(longSongs, sampleSize, rng)
+  const finalSelect = clampSelectCount(selectCount, songs.length)
   return {
     name: 'SongLengthChallenge',
-    summary: summaryForSongs(songs.length, 'over 5 minutes'),
+    summary: summaryForSongs(songs.length, finalSelect, 'over 5 minutes'),
     songs,
+    selectCount: finalSelect,
     goal: actGoal(actIndex),
   }
 }
 
-function shortSongChallenge(pool, poolSize, rng, actIndex) {
+function shortSongChallenge(pool, poolSize, rng, actIndex, selectCount) {
   const shorts = pool.filter((s) => s.seconds > 0 && s.seconds <= 150)
   if (shorts.length < 3) return null
-  const songs = sample(shorts, Math.min(poolSize, shorts.length), rng)
+  const sampleSize = Math.max(selectCount, Math.min(poolSize, shorts.length))
+  const songs = sample(shorts, sampleSize, rng)
+  const finalSelect = clampSelectCount(selectCount, songs.length)
   return {
     name: 'ShortSongChallenge',
-    summary: summaryForSongs(songs.length, 'under 2:30'),
+    summary: summaryForSongs(songs.length, finalSelect, 'under 2:30'),
     songs,
+    selectCount: finalSelect,
     goal: actGoal(actIndex),
   }
 }
 
-function mediumSongChallenge(pool, poolSize, rng, actIndex) {
+function mediumSongChallenge(pool, poolSize, rng, actIndex, selectCount) {
   const mediums = pool.filter((s) => s.seconds > 150 && s.seconds < 300)
   if (mediums.length < 3) return null
-  const songs = sample(mediums, Math.min(poolSize, mediums.length), rng)
+  const sampleSize = Math.max(selectCount, Math.min(poolSize, mediums.length))
+  const songs = sample(mediums, sampleSize, rng)
+  const finalSelect = clampSelectCount(selectCount, songs.length)
   return {
     name: 'MediumSongChallenge',
-    summary: summaryForSongs(songs.length, '2:31 – 4:59'),
+    summary: summaryForSongs(songs.length, finalSelect, '2:31 – 4:59'),
     songs,
+    selectCount: finalSelect,
     goal: actGoal(actIndex),
   }
 }
 
-function epicSongChallenge(pool, poolSize, rng, actIndex) {
+function epicSongChallenge(pool, poolSize, rng, actIndex, selectCount) {
   const epics = pool.filter((s) => s.seconds >= 420)
   if (epics.length < 3) return null
-  const songs = sample(epics, Math.min(poolSize, epics.length), rng)
+  const sampleSize = Math.max(selectCount, Math.min(poolSize, epics.length))
+  const songs = sample(epics, sampleSize, rng)
+  const finalSelect = clampSelectCount(selectCount, songs.length)
   return {
     name: 'EpicSongChallenge',
-    summary: summaryForSongs(songs.length, 'over 7 minutes'),
+    summary: summaryForSongs(songs.length, finalSelect, 'over 7 minutes'),
     songs,
+    selectCount: finalSelect,
     goal: actGoal(actIndex),
   }
 }
@@ -404,6 +435,10 @@ function clampDifficulty(d) {
   return Math.max(0, Math.min(6, d))
 }
 
+function clampSelectCount(count, songsLength) {
+  return Math.max(1, Math.min(count, songsLength))
+}
+
 function ensureBoss(list) {
   const exists = list.some((s) => s.title?.toLowerCase() === 'bohemian rhapsody')
   if (exists) return list
@@ -422,3 +457,5 @@ function ensureBoss(list) {
     },
   ]
 }
+
+export { pickSelectCount, clampSelectCount, shortSongChallenge, mediumSongChallenge, epicSongChallenge }

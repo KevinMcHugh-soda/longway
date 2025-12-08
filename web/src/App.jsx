@@ -5,8 +5,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 const rowSpacing = 70
 const colSpacing = 80
 const nodeSize = 32
-const minSelectableSongs = 2
-const maxSelectableSongs = 5
 const maxStars = 6
 const STORAGE_KEY = 'longway-save-v1'
 
@@ -76,6 +74,7 @@ function App() {
     isReachable(selected, choices, current, currentRow, currentAct) && selected.row === currentRow
   const canAdvanceRow = phase === 'done' && currentRow < current.rows.length - 1
   const canAdvanceAct = phase === 'done' && currentRow === current.rows.length - 1 && currentAct < acts.length - 1
+  const selectTarget = selectedNode?.challenge?.selectCount ?? 3
   const action =
     gameOver && selectedNode?.kind !== 'boss'
       ? null
@@ -145,8 +144,8 @@ function App() {
                         phase,
                         isSelected,
                         selectedCount: selectedSongs.length,
-                        minSelectable: minSelectableSongs,
-                        maxSelectable: maxSelectableSongs,
+                        minSelectable: selectTarget,
+                        maxSelectable: selectTarget,
                       })
                       return (
                         <li key={`${s.id}-${s.title}`}>
@@ -270,7 +269,9 @@ function App() {
   }
 
   function toggleSongSelection(song) {
-    setSelectedSongs((prev) => toggleSong(prev, song, { minSelectable: minSelectableSongs, maxSelectable: maxSelectableSongs }))
+    setSelectedSongs((prev) =>
+      toggleSong(prev, song, { minSelectable: selectTarget, maxSelectable: selectTarget }),
+    )
   }
 
   function updateStarEntry(idx, value) {
@@ -284,7 +285,7 @@ function App() {
 
   function starsComplete() {
     return (
-      selectedSongs.length >= minSelectableSongs &&
+      selectedSongs.length === selectTarget &&
       selectedSongs.every((_, idx) => starEntries[idx] !== undefined && starEntries[idx] !== '')
     )
   }
