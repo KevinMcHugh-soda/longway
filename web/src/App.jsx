@@ -42,6 +42,9 @@ function App() {
   const [loadedFromStorage] = useState(Boolean(savedState))
   const [lastSaved, setLastSaved] = useState(savedState?.lastSaved ?? null)
   const [gameOver, setGameOver] = useState(false)
+  const [newGameOpen, setNewGameOpen] = useState(false)
+  const [pendingInstrument, setPendingInstrument] = useState(instrument)
+  const [pendingSeed, setPendingSeed] = useState(String(seed))
 
   useEffect(() => {
     if (!hydrated.current) {
@@ -115,17 +118,7 @@ function App() {
             </div>
           </div>
           <div className="options">
-            <label className="select-label">
-              Instrument
-              <select value={instrument} onChange={(e) => handleInstrumentChange(e.target.value)}>
-                {instruments.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className="ghost" type="button" onClick={startNewRun}>
+            <button className="ghost" type="button" onClick={() => openNewGame()}>
               New game
             </button>
           </div>
@@ -263,9 +256,49 @@ function App() {
               <div className="gameover-card">
                 <h4>Game Over</h4>
                 <p>You missed the goal. Start a new run to try again.</p>
-                <button className="primary" type="button" onClick={startNewRun}>
+                <button className="primary" type="button" onClick={openNewGame}>
                   New game
                 </button>
+              </div>
+            </div>
+          ) : null}
+          {newGameOpen ? (
+            <div className="gameover">
+              <div className="gameover-card">
+                <h4>New Game</h4>
+                <div className="form-row">
+                  <label className="select-label">
+                    Instrument
+                    <select
+                      value={pendingInstrument}
+                      onChange={(e) => setPendingInstrument(e.target.value)}
+                    >
+                      {instruments.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="form-row">
+                  <label className="select-label">
+                    Seed (optional)
+                    <input
+                      type="text"
+                      value={pendingSeed}
+                      onChange={(e) => setPendingSeed(e.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="dialog-actions">
+                  <button className="ghost" type="button" onClick={() => setNewGameOpen(false)}>
+                    Cancel
+                  </button>
+                  <button className="primary" type="button" onClick={confirmNewGame}>
+                    Start
+                  </button>
+                </div>
               </div>
             </div>
           ) : null}
@@ -352,8 +385,9 @@ function App() {
   }
 
   function startNewRun() {
-    const nextSeed = Date.now()
-    setSeed(nextSeed)
+    const nextSeed = parseInt(pendingSeed || '', 10)
+    setSeed(Number.isNaN(nextSeed) ? Date.now() : nextSeed)
+    setInstrument(pendingInstrument)
     setCurrentAct(0)
     setChoices({})
     setResults({})
@@ -365,8 +399,14 @@ function App() {
     setGameOver(false)
   }
 
-  function handleInstrumentChange(value) {
-    setInstrument(value)
+  function openNewGame() {
+    setPendingInstrument(instrument)
+    setPendingSeed(String(seed))
+    setNewGameOpen(true)
+  }
+
+  function confirmNewGame() {
+    setNewGameOpen(false)
     startNewRun()
   }
 }

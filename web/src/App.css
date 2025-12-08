@@ -166,6 +166,23 @@ h1 {
   cursor: pointer;
 }
 
+.select-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.select-label select,
+.select-label input {
+  background: #0f172a;
+  border: 1px solid #1f2937;
+  color: #e2e8f0;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+
 .controls {
   display: flex;
   align-items: center;
@@ -265,6 +282,16 @@ h1 {
 .gameover-card p {
   margin: 0 0 1rem 0;
   color: #cbd5e1;
+}
+
+.form-row {
+  margin-bottom: 0.75rem;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .stars {
