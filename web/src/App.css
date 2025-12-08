@@ -138,7 +138,7 @@ h1 {
 }
 
 .node-selected {
-  outline: 2px solid #22d3ee;
+  outline: 3px solid #22d3ee;
   outline-offset: 2px;
 }
 
