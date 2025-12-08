@@ -28,19 +28,24 @@ function App() {
   const [starEntries, setStarEntries] = useState(savedState?.starEntries ?? [])
   const [results, setResults] = useState(() => restoreResults(savedState?.results))
   const hydrated = useRef(false)
+  const prevAct = useRef(currentAct)
   const [loadedFromStorage] = useState(Boolean(savedState))
   const [lastSaved, setLastSaved] = useState(savedState?.lastSaved ?? null)
 
   useEffect(() => {
     if (!hydrated.current) {
       hydrated.current = true
+      prevAct.current = currentAct
       return
     }
-    setSelected({ act: currentAct, row: 0, col: 0 })
-    setPhase('idle')
-    setSelectedSongs([])
-    setStarEntries([])
-    setCurrentRow(0)
+    if (prevAct.current !== currentAct) {
+      prevAct.current = currentAct
+      setSelected({ act: currentAct, row: 0, col: 0 })
+      setPhase('idle')
+      setSelectedSongs([])
+      setStarEntries([])
+      setCurrentRow(0)
+    }
   }, [currentAct])
 
   useEffect(() => {
