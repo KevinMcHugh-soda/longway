@@ -125,8 +125,9 @@ function App() {
                           resultsKey(selected.act, selected.row) in results &&
                           isSelected ? (
                             <span className="meta">
-                              Stars:{' '}
-                              {results[resultsKey(selected.act, selected.row)].stars[selectedIdx]}
+                              {renderStars(
+                                results[resultsKey(selected.act, selected.row)].stars[selectedIdx],
+                              )}
                             </span>
                           ) : null}
                         </li>
@@ -371,4 +372,10 @@ export function renderDifficulty(level) {
   if (clamped >= 6) return '🔥'
   if (clamped <= 0) return '•'
   return '🔴'.repeat(clamped)
+}
+
+export function renderStars(count) {
+  const clamped = Math.max(0, Math.min(maxStars, Math.round(count || 0)))
+  if (clamped === 0) return '—'
+  return '⭐️'.repeat(clamped)
 }

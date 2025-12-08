@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isSongToggleAllowed, renderDifficulty } from './App'
+import { isSongToggleAllowed, renderDifficulty, renderStars } from './App'
 
 describe('song selection gating', () => {
   it('disables toggling once selecting phase ends', () => {
@@ -28,5 +28,15 @@ describe('renderDifficulty', () => {
 
   it('renders a placeholder for zero', () => {
     expect(renderDifficulty(0)).toBe('•')
+  })
+})
+
+describe('renderStars', () => {
+  it('renders stars as emoji', () => {
+    expect(renderStars(3)).toBe('⭐️⭐️⭐️')
+  })
+
+  it('renders dash for zero', () => {
+    expect(renderStars(0)).toBe('—')
   })
 })
