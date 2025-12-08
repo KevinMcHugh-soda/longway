@@ -30,17 +30,16 @@ function App() {
   const hydrated = useRef(false)
 
   useEffect(() => {
-    if (!hydrated.current && savedState) {
+    if (!hydrated.current) {
       hydrated.current = true
       return
     }
-    hydrated.current = true
     setSelected({ act: currentAct, row: 0, col: 0 })
     setPhase('idle')
     setSelectedSongs([])
     setStarEntries([])
     setCurrentRow(0)
-  }, [currentAct, savedState])
+  }, [currentAct])
 
   useEffect(() => {
     persistState({
