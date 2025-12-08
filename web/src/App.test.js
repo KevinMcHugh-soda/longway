@@ -44,16 +44,54 @@ describe('renderStars', () => {
 describe('actionForState', () => {
   it('surfaces the right labels and disabled states', () => {
     expect(
-      actionForState({ phase: 'idle', startEnabled: true, hasSelection: false, starsComplete: false, canAdvance: false }),
+      actionForState({
+        phase: 'idle',
+        startEnabled: true,
+        hasSelection: false,
+        starsComplete: false,
+        canAdvanceRow: false,
+        canAdvanceAct: false,
+      }),
     ).toEqual({ kind: 'start', label: 'Start challenge', disabled: false })
     expect(
-      actionForState({ phase: 'selecting', hasSelection: false, startEnabled: true, starsComplete: false, canAdvance: false }),
+      actionForState({
+        phase: 'selecting',
+        hasSelection: false,
+        startEnabled: true,
+        starsComplete: false,
+        canAdvanceRow: false,
+        canAdvanceAct: false,
+      }),
     ).toMatchObject({ kind: 'enter', disabled: true })
     expect(
-      actionForState({ phase: 'entering', starsComplete: false, hasSelection: true, startEnabled: true, canAdvance: false }),
+      actionForState({
+        phase: 'entering',
+        starsComplete: false,
+        hasSelection: true,
+        startEnabled: true,
+        canAdvanceRow: false,
+        canAdvanceAct: false,
+      }),
     ).toMatchObject({ kind: 'submit', disabled: true })
     expect(
-      actionForState({ phase: 'done', canAdvance: true, hasSelection: true, starsComplete: true, startEnabled: false }),
+      actionForState({
+        phase: 'done',
+        canAdvanceRow: true,
+        canAdvanceAct: false,
+        hasSelection: true,
+        starsComplete: true,
+        startEnabled: false,
+      }),
     ).toMatchObject({ kind: 'advance', disabled: false })
+    expect(
+      actionForState({
+        phase: 'done',
+        canAdvanceRow: false,
+        canAdvanceAct: true,
+        hasSelection: true,
+        starsComplete: true,
+        startEnabled: false,
+      }),
+    ).toMatchObject({ kind: 'nextAct', disabled: false })
   })
 })

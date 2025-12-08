@@ -10,7 +10,7 @@ const maxStars = 6
 
 function App() {
   const { acts, seed } = useMemo(() => generateRun(Date.now()), [])
-  const [currentAct] = useState(0)
+  const [currentAct, setCurrentAct] = useState(0)
   const [selected, setSelected] = useState({ act: 0, row: 0, col: 0 })
   const [phase, setPhase] = useState('idle') // idle | selecting | entering | done
   const [currentRow, setCurrentRow] = useState(0)
@@ -32,11 +32,14 @@ function App() {
     current?.rows[selected.row]?.find((n) => n.col === selected.col) ?? current?.rows[0]?.[0]
   const startEnabled =
     isReachable(selected, choices, current, currentRow, currentAct) && selected.row === currentRow
+  const canAdvanceRow = phase === 'done' && currentRow < current.rows.length - 1
+  const canAdvanceAct = phase === 'done' && currentRow === current.rows.length - 1 && currentAct < acts.length - 1
   const action = actionForState({
     phase,
     hasSelection: selectedSongs.length > 0,
     starsComplete: starsComplete(),
-    canAdvance: phase === 'done' && currentRow < current.rows.length - 1,
+    canAdvanceRow,
+    canAdvanceAct,
     startEnabled,
   })
 
@@ -154,6 +157,9 @@ function App() {
                     case 'advance':
                       advanceRow()
                       break
+                    case 'nextAct':
+                      advanceAct()
+                      break
                     default:
                       break
                   }
@@ -238,6 +244,11 @@ function App() {
     setPhase('idle')
     setSelectedSongs([])
     setStarEntries([])
+  }
+
+  function advanceAct() {
+    if (currentAct >= acts.length - 1) return
+    setCurrentAct((prev) => Math.min(prev + 1, acts.length - 1))
   }
 }
 
@@ -384,7 +395,14 @@ export function renderStars(count) {
   return '⭐️'.repeat(clamped)
 }
 
-export function actionForState({ phase, hasSelection, starsComplete, canAdvance, startEnabled }) {
+export function actionForState({
+  phase,
+  hasSelection,
+  starsComplete,
+  canAdvanceRow,
+  canAdvanceAct,
+  startEnabled,
+}) {
   if (phase === 'idle') {
     return { kind: 'start', label: 'Start challenge', disabled: !startEnabled }
   }
@@ -394,7 +412,10 @@ export function actionForState({ phase, hasSelection, starsComplete, canAdvance,
   if (phase === 'entering') {
     return { kind: 'submit', label: 'Submit results', disabled: !starsComplete }
   }
-  if (phase === 'done' && canAdvance) {
+  if (phase === 'done' && canAdvanceAct) {
+    return { kind: 'nextAct', label: 'Next act', disabled: false }
+  }
+  if (phase === 'done' && canAdvanceRow) {
     return { kind: 'advance', label: 'Advance', disabled: false }
   }
   return null
