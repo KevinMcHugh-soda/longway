@@ -72,34 +72,56 @@ function generateAct(index, rng) {
 function connectRows(prev, next, rng) {
   if (!prev.length || !next.length) return
 
-  const edgeSets = prev.map(() => new Set())
+  const assignments = []
+  for (let i = 0; i < prev.length; i++) {
+    let target = 0
+    if (prev.length > 1) {
+      target = Math.round((i * (next.length - 1)) / (prev.length - 1))
+    }
+    if (assignments.length > 0 && target < assignments[assignments.length - 1]) {
+      target = assignments[assignments.length - 1]
+    }
+    target = Math.min(target, next.length - 1)
+    assignments.push(target)
+    prev[i].edges = [target]
+  }
 
-  // ensure every next node has an inbound edge
-  next.forEach((_, nextIdx) => {
-    const candidates = edgeSets
-      .map((set, idx) => ({ size: set.size, idx }))
-      .filter(({ size }) => size < 2)
-    if (candidates.length === 0) return
-    const pick = candidates[rngInt(rng, candidates.length)].idx
-    edgeSets[pick].add(nextIdx)
-  })
+  // optional second edges to adjacent targets without crossing
+  for (let i = 0; i < prev.length; i++) {
+    const currentTarget = assignments[i]
+    const nextTarget = assignments[i + 1] ?? next.length - 1
+    const candidate = currentTarget + 1
+    if (candidate <= nextTarget && candidate < next.length && prev[i].edges.length < 2) {
+      if (rng() < 0.35) {
+        prev[i].edges.push(candidate)
+      }
+    }
+  }
 
-  // add extra edges
-  prev.forEach((node, idx) => {
-    const set = edgeSets[idx] ?? new Set()
-    const remaining = Math.max(0, 2 - set.size)
-    const available = Math.max(0, next.length - set.size)
-    if (remaining <= 0 || available <= 0) return
-    const targetCount = Math.min(remaining, available)
-    const picks = pickDistinct(next.length, targetCount, rng, set)
-    picks.forEach((p) => set.add(p))
-    edgeSets[idx] = set
-  })
-
-  // finalize edges with a max of 2 unique targets
-  edgeSets.forEach((set, idx) => {
-    const limited = Array.from(set)
-    prev[idx].edges = limited
+  // ensure every next node has inbound edge (attach to nearest without crossing)
+  const incoming = Array(next.length).fill(0)
+  prev.forEach((node) => node.edges.forEach((e) => incoming[e]++))
+  incoming.forEach((count, idx) => {
+    if (count > 0) return
+    // find prev whose target range covers idx
+    for (let p = 0; p < prev.length; p++) {
+      const targets = prev[p].edges
+      const maxTarget = Math.max(...targets)
+      const minTarget = Math.min(...targets)
+      if (idx >= minTarget && idx <= maxTarget && targets.length < 2) {
+        targets.push(idx)
+        incoming[idx]++
+        return
+      }
+    }
+    // fallback: attach to closest prev with space
+    for (let p = 0; p < prev.length; p++) {
+      if (prev[p].edges.length < 2) {
+        prev[p].edges.push(idx)
+        incoming[idx]++
+        return
+      }
+    }
   })
 }
 
