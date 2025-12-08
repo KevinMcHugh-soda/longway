@@ -66,6 +66,7 @@ describe('actionForState', () => {
         phase: 'idle',
         startEnabled: true,
         hasSelection: false,
+        canEnter: false,
         starsComplete: false,
         canAdvanceRow: false,
         canAdvanceAct: false,
@@ -79,6 +80,7 @@ describe('actionForState', () => {
         starsComplete: false,
         canAdvanceRow: false,
         canAdvanceAct: false,
+        canEnter: false,
       }),
     ).toMatchObject({ kind: 'enter', disabled: true })
     expect(
@@ -89,6 +91,7 @@ describe('actionForState', () => {
         startEnabled: true,
         canAdvanceRow: false,
         canAdvanceAct: false,
+        canEnter: true,
       }),
     ).toMatchObject({ kind: 'submit', disabled: true })
     expect(

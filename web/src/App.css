@@ -137,19 +137,6 @@ h1 {
   background: #f472b6;
 }
 
-.node-selected {
-  outline: 2px solid #22d3ee;
-  outline-offset: 2px;
-}
-
-.node-reachable {
-  cursor: pointer;
-}
-
-.node-disabled {
-  opacity: 0.35;
-}
-
 .seed {
   color: #94a3b8;
   text-align: right;

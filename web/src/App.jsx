@@ -75,12 +75,14 @@ function App() {
   const canAdvanceRow = phase === 'done' && currentRow < current.rows.length - 1
   const canAdvanceAct = phase === 'done' && currentRow === current.rows.length - 1 && currentAct < acts.length - 1
   const selectTarget = selectedNode?.challenge?.selectCount ?? 3
+  const readyToEnter = selectedSongs.length === selectTarget
   const action =
     gameOver && selectedNode?.kind !== 'boss'
       ? null
       : actionForState({
           phase,
           hasSelection: selectedSongs.length > 0,
+          canEnter: readyToEnter,
           starsComplete: starsComplete(),
           canAdvanceRow,
           canAdvanceAct,
@@ -140,18 +142,22 @@ function App() {
                     {(phase === 'selecting' ? selectedNode.challenge.songs : selectedSongs).map((s) => {
                       const selectedIdx = selectedSongs.findIndex((sel) => sel.id === s.id)
                       const isSelected = selectedIdx !== -1
-                      const toggleAllowed = isSongToggleAllowed({
-                        phase,
-                        isSelected,
-                        selectedCount: selectedSongs.length,
-                        minSelectable: selectTarget,
-                        maxSelectable: selectTarget,
-                      })
+                      const toggleAllowed =
+                        phase === 'selecting' &&
+                        isSongToggleAllowed({
+                          phase,
+                          isSelected,
+                          selectedCount: selectedSongs.length,
+                          minSelectable: selectTarget,
+                          maxSelectable: selectTarget,
+                        })
                       return (
                         <li key={`${s.id}-${s.title}`}>
                           <button
                             type="button"
-                            className={`song-row ${isSelected ? 'song-row-selected' : ''}`}
+                            className={`song-row ${
+                              phase === 'selecting' && isSelected ? 'song-row-selected' : ''
+                            }`}
                             onClick={toggleAllowed ? () => toggleSongSelection(s) : undefined}
                             disabled={!toggleAllowed}
                           >
@@ -496,6 +502,7 @@ export function toggleSong(current, song, { minSelectable, maxSelectable }) {
 export function actionForState({
   phase,
   hasSelection,
+  canEnter,
   starsComplete,
   canAdvanceRow,
   canAdvanceAct,
@@ -505,7 +512,7 @@ export function actionForState({
     return { kind: 'start', label: 'Start challenge', disabled: !startEnabled }
   }
   if (phase === 'selecting') {
-    return { kind: 'enter', label: 'Enter stars', disabled: !hasSelection }
+    return { kind: 'enter', label: 'Enter stars', disabled: !canEnter }
   }
   if (phase === 'entering') {
     return { kind: 'submit', label: 'Submit results', disabled: !starsComplete }
