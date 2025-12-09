@@ -192,6 +192,14 @@ h1 {
   cursor: pointer;
 }
 
+.shop-item .rarity-uncommon {
+  color: #c084fc;
+}
+
+.rarity-uncommon {
+  color: #c084fc;
+}
+
 .shop-item-active {
   border-color: #22d3ee;
   background: #0e1a2e;
