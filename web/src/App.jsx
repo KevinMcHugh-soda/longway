@@ -219,7 +219,7 @@ function App() {
                         const equipped = gear[item.slot]?.id === item.id
                         return (
                           <div key={item.id} className="shop-slot">
-                            <p className={`meta rarity-${item.rarity}`}>
+                            <p className="meta">
                               {item.slot} • {item.rarity}
                             </p>
                             <button
@@ -227,7 +227,7 @@ function App() {
                               onClick={() => equipGear(item.slot, item)}
                               type="button"
                             >
-                              <span className={`rarity-${item.rarity}`}>{item.name}</span>
+                              {item.name}
                             </button>
                           </div>
                         )
