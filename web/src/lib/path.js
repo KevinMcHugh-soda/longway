@@ -6,6 +6,7 @@ const minNodesPerRow = 2
 const maxNodesPerRow = 5
 const minSelectable = 2
 const maxSelectable = 5
+const shopRows = [2, 6]
 
 const poolBounds = {
   1: { min: 9, max: 12 },
@@ -15,6 +16,7 @@ const poolBounds = {
 
 export const nodeKinds = {
   challenge: 'challenge',
+  shop: 'shop',
   boss: 'boss',
 }
 
@@ -45,21 +47,24 @@ function generateAct(index, rng) {
     let count = minNodesPerRow + rngInt(rng, maxNodesPerRow - minNodesPerRow + 1)
     count = Math.min(count, maxAllowed)
     if (count < 1) count = 1
-    if (row === rowsPerAct - 1) {
-      count = 1 // boss
+    if (row === rowsPerAct - 1 || shopRows.includes(row)) {
+      count = 1 // boss or shop is single node for clarity
     }
 
     const nodes = []
     for (let col = 0; col < count; col++) {
       const isBoss = row === rowsPerAct - 1
+      const isShop = shopRows.includes(row)
       const poolSize = pickPoolSize(index, filteredSongs.length, rng)
       const selectCount = pickSelectCount(rng)
       nodes.push({
         col,
-        kind: isBoss ? nodeKinds.boss : nodeKinds.challenge,
+        kind: isBoss ? nodeKinds.boss : isShop ? nodeKinds.shop : nodeKinds.challenge,
         challenge: isBoss
           ? bossChallenge(index)
-          : challenge(filteredSongs, poolSize, selectCount, rng, index),
+          : isShop
+            ? null
+            : challenge(filteredSongs, poolSize, selectCount, rng, index),
         edges: [],
       })
     }

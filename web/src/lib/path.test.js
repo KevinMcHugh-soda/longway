@@ -18,6 +18,8 @@ describe('path generation', () => {
       expect(top).toHaveLength(1)
       expect(top[0].kind).toBe(nodeKinds.boss)
       expect(top[0].challenge?.songs?.[0]?.title).toBe('Bohemian Rhapsody')
+      expect(act.rows[2][0].kind).toBe(nodeKinds.shop)
+      expect(act.rows[6][0].kind).toBe(nodeKinds.shop)
 
       // every node except the first row should have incoming edges
       for (let r = 1; r < act.rows.length; r++) {

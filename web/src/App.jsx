@@ -93,15 +93,17 @@ function App() {
   const action =
     gameOver && selectedNode?.kind !== 'boss'
       ? null
-      : actionForState({
-          phase,
-          hasSelection: selectedSongs.length > 0,
-          canEnter: readyToEnter,
-          starsComplete: starsComplete(),
-          canAdvanceRow,
-          canAdvanceAct,
-          startEnabled,
-        })
+      : selectedNode?.kind === 'shop'
+        ? null
+        : actionForState({
+            phase,
+            hasSelection: selectedSongs.length > 0,
+            canEnter: readyToEnter,
+            starsComplete: starsComplete(),
+            canAdvanceRow,
+            canAdvanceAct,
+            startEnabled,
+          })
 
   return (
     <main className="app">
@@ -143,13 +145,21 @@ function App() {
           {selectedNode ? (
             <div className="details">
               <p className="eyebrow">Challenge</p>
-              <h3>{selectedNode.challenge?.name ?? 'Unknown'}</h3>
-              <p className="lede">{selectedNode.challenge?.summary}</p>
-              {selectedNode.challenge?.goal ? (
+              <h3>
+                {selectedNode.kind === 'shop'
+                  ? 'Gear Shop'
+                  : selectedNode.challenge?.name ?? 'Unknown'}
+              </h3>
+              <p className="lede">
+                {selectedNode.kind === 'shop'
+                  ? 'Restock and upgrade (coming soon).'
+                  : selectedNode.challenge?.summary}
+              </p>
+              {selectedNode.kind !== 'shop' && selectedNode.challenge?.goal ? (
                 <p className="goal">Goal: average {renderStars(selectedNode.challenge.goal)}</p>
               ) : null}
 
-              {phase !== 'idle' && selectedNode.challenge?.songs && (
+              {selectedNode.kind !== 'shop' && phase !== 'idle' && selectedNode.challenge?.songs && (
                 <>
                   <p className="eyebrow">Songs</p>
                   <ul>
