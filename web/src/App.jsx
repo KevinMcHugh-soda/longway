@@ -94,7 +94,7 @@ function App() {
     gameOver && selectedNode?.kind !== 'boss'
       ? null
       : selectedNode?.kind === 'shop'
-        ? null
+        ? { kind: 'advance', label: 'Leave shop', disabled: !startEnabled }
         : actionForState({
             phase,
             hasSelection: selectedSongs.length > 0,
