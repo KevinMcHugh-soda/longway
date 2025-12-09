@@ -3,10 +3,10 @@ import songsCsv from '../data/downloaded_songs.csv?raw'
 const totalActs = 3
 const rowsPerAct = 8
 const minNodesPerRow = 2
-const maxNodesPerRow = 5
+const maxNodesPerRow = 3
 const minSelectable = 2
 const maxSelectable = 5
-const shopRows = [2, 6]
+const shopCount = 2
 
 const poolBounds = {
   1: { min: 9, max: 12 },
@@ -35,6 +35,7 @@ export function generateRun(seed = Date.now()) {
 function generateAct(index, rng) {
   const filteredSongs = applyActDifficultyConstraints(index, catalog)
   const rows = []
+  const shopRows = pickShopRows(rowsPerAct, rng)
 
   for (let row = 0; row < rowsPerAct; row++) {
     let maxAllowed = maxNodesPerRow
@@ -47,14 +48,14 @@ function generateAct(index, rng) {
     let count = minNodesPerRow + rngInt(rng, maxNodesPerRow - minNodesPerRow + 1)
     count = Math.min(count, maxAllowed)
     if (count < 1) count = 1
-    if (row === rowsPerAct - 1 || shopRows.includes(row)) {
+    if (row === rowsPerAct - 1 || shopRows.has(row)) {
       count = 1 // boss or shop is single node for clarity
     }
 
     const nodes = []
     for (let col = 0; col < count; col++) {
       const isBoss = row === rowsPerAct - 1
-      const isShop = shopRows.includes(row)
+      const isShop = shopRows.has(row)
       const poolSize = pickPoolSize(index, filteredSongs.length, rng)
       const selectCount = pickSelectCount(rng)
       nodes.push({
@@ -487,4 +488,28 @@ function ensureBoss(list) {
       year: 1975,
     },
   ]
+}
+
+function pickShopRows(totalRows, rng) {
+  const shops = new Set()
+  const candidateRows = []
+  for (let r = 1; r < totalRows - 1; r++) {
+    candidateRows.push(r)
+  }
+  const maxAttempts = 50
+  let attempts = 0
+  while (shops.size < shopCount && attempts < maxAttempts) {
+    const row = candidateRows[rngInt(rng, candidateRows.length)]
+    if (shops.has(row) || shops.has(row - 1) || shops.has(row + 1)) {
+      attempts++
+      continue
+    }
+    shops.add(row)
+  }
+  for (let i = 0; shops.size < shopCount && i < candidateRows.length; i++) {
+    const r = candidateRows[i]
+    if (shops.has(r) || shops.has(r - 1) || shops.has(r + 1)) continue
+    shops.add(r)
+  }
+  return shops
 }

@@ -14,18 +14,19 @@ func generateRun(seed int64, songs []song) []act {
 func generateAct(index int, rng *rand.Rand, songs []song) act {
 	actSongs := applyActDifficultyConstraints(index, songs)
 	poolSize := pickPoolSize(index, len(actSongs), rng)
+	shopRows := pickShopRows(rng)
 	rows := make([][]node, rowsPerAct)
 	for row := 0; row < rowsPerAct; row++ {
 		count := minNodesPerRow + rng.Intn(maxNodesPerRow-minNodesPerRow+1)
-		if row == rowsPerAct-1 {
-			count = 1 // boss
+		if row == rowsPerAct-1 || shopRows[row] {
+			count = 1 // boss or shop
 		}
 		nodes := make([]node, count)
 		for i := range nodes {
 			kind := nodeChallenge
 			if row == rowsPerAct-1 {
 				kind = nodeBoss
-			} else if row == 2 || row == 4 {
+			} else if shopRows[row] {
 				kind = nodeShop
 			}
 			nodes[i] = node{
@@ -48,6 +49,38 @@ func generateAct(index int, rng *rand.Rand, songs []song) act {
 		index: index,
 		rows:  rows,
 	}
+}
+
+func pickShopRows(rng *rand.Rand) map[int]bool {
+	shopCount := 2
+	candidates := []int{}
+	for r := 1; r < rowsPerAct-1; r++ { // avoid first and last rows
+		candidates = append(candidates, r)
+	}
+	selected := map[int]bool{}
+	attempts := 0
+	for len(selected) < shopCount && attempts < 100 {
+		r := candidates[rng.Intn(len(candidates))]
+		// no back-to-back
+		if selected[r-1] || selected[r+1] {
+			attempts++
+			continue
+		}
+		selected[r] = true
+	}
+	// ensure we have the desired count by spacing if needed
+	for len(selected) < shopCount && len(candidates) > 0 {
+		for _, r := range candidates {
+			if selected[r] || selected[r-1] || selected[r+1] {
+				continue
+			}
+			selected[r] = true
+			if len(selected) >= shopCount {
+				break
+			}
+		}
+	}
+	return selected
 }
 
 func connectRows(prev []node, next []node, rng *rand.Rand) {

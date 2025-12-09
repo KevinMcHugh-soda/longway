@@ -18,8 +18,14 @@ describe('path generation', () => {
       expect(top).toHaveLength(1)
       expect(top[0].kind).toBe(nodeKinds.boss)
       expect(top[0].challenge?.songs?.[0]?.title).toBe('Bohemian Rhapsody')
-      expect(act.rows[2][0].kind).toBe(nodeKinds.shop)
-      expect(act.rows[6][0].kind).toBe(nodeKinds.shop)
+      const shopRows = act.rows
+        .map((row, idx) => ({ row, idx }))
+        .filter(({ row }) => row[0]?.kind === nodeKinds.shop)
+      expect(shopRows.length).toBeGreaterThanOrEqual(2)
+      shopRows.forEach(({ idx }, i) => {
+        if (i === 0) return
+        expect(Math.abs(shopRows[i - 1].idx - idx)).toBeGreaterThan(1)
+      })
 
       // every node except the first row should have incoming edges
       for (let r = 1; r < act.rows.length; r++) {

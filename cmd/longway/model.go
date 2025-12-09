@@ -25,7 +25,7 @@ const (
 	totalActs             = 3
 	rowsPerAct            = 7
 	minNodesPerRow        = 2
-	maxNodesPerRow        = 5
+	maxNodesPerRow        = 3
 	colSpacing            = 4
 	challengeSongListSize = 12
 )
