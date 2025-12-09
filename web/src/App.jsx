@@ -152,6 +152,7 @@ function App() {
           <h1>A Long Way To The Top</h1>
         </div>
         <div className="toolbar">
+          <div className="act-label">Act {current?.index ?? 1}</div>
           <div className="seed">
             <div>Seed: {seed}</div>
             <div className="autosave">
