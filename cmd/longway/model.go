@@ -17,12 +17,13 @@ type nodeKind int
 const (
 	nodeUnknown nodeKind = iota
 	nodeChallenge
+	nodeShop
 	nodeBoss
 )
 
 const (
 	totalActs             = 3
-	rowsPerAct            = 8
+	rowsPerAct            = 7
 	minNodesPerRow        = 2
 	maxNodesPerRow        = 5
 	colSpacing            = 4

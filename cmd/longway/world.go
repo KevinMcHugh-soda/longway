@@ -22,13 +22,19 @@ func generateAct(index int, rng *rand.Rand, songs []song) act {
 		}
 		nodes := make([]node, count)
 		for i := range nodes {
-			nodes[i] = node{
-				col:       i,
-				kind:      nodeChallenge,
-				challenge: newChallenge(actSongs, rng, poolSize),
-			}
+			kind := nodeChallenge
 			if row == rowsPerAct-1 {
-				nodes[i].kind = nodeBoss
+				kind = nodeBoss
+			} else if row == 2 || row == 4 {
+				kind = nodeShop
+			}
+			nodes[i] = node{
+				col:  i,
+				kind: kind,
+			}
+			if kind == nodeChallenge {
+				nodes[i].challenge = newChallenge(actSongs, rng, poolSize)
+			} else if kind == nodeBoss {
 				nodes[i].challenge = bossChallenge(songs)
 			}
 		}

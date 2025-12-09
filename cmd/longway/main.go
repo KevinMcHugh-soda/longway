@@ -39,6 +39,7 @@ var (
 				Foreground(lipgloss.Color("#1E1E2E")).
 				Background(lipgloss.Color("#F0D94A")).
 				Bold(true)
+	shopStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#94E2D5")).Bold(true)
 )
 
 const songsFile = "downloaded_songs.csv"
@@ -311,6 +312,8 @@ func nodeGlyph(n node) rune {
 	switch n.kind {
 	case nodeChallenge:
 		return 'C'
+	case nodeShop:
+		return 'S'
 	case nodeBoss:
 		return 'B'
 	default:
@@ -399,6 +402,8 @@ func renderNodePreview(n *node, m *model) string {
 		return strings.TrimRight(b.String(), "\n")
 	case nodeBoss:
 		return "It's the boss!!!"
+	case nodeShop:
+		return "Shop: Browse gear (coming soon)."
 	default:
 		return "Unknown node."
 	}
