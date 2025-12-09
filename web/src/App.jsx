@@ -1,5 +1,5 @@
 import './App.css'
-import { generateRun } from './lib/path'
+import { generateRun, nodeKinds } from './lib/path'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 const rowSpacing = 70
