@@ -3,7 +3,7 @@ import { generateRun, nodeKinds } from './lib/path'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 const rowSpacing = 70
-const colSpacing = 100
+const colSpacing = 80
 const nodeSize = 32
 const maxStars = 6
 const STORAGE_KEY = 'longway-save-v1'
