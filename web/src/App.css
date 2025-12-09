@@ -79,14 +79,13 @@ h1 {
 }
 
 .acts {
-  height: calc(100% - 48px);
+  height: 80%;
 }
 
 .gear {
   margin-top: 1rem;
   padding-top: 0.5rem;
   border-top: 1px solid #1e293b;
-  min-height: 120px;
 }
 
 .gear ul {
@@ -203,7 +202,6 @@ h1 {
   border-radius: 10px;
   padding: 0.5rem;
   background: #0b1222;
-  min-height: 100px;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;

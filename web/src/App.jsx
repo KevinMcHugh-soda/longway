@@ -19,20 +19,20 @@ const instruments = [
 ]
 const gearOptions = {
   Shirt: [
-    { id: 'shirt-cheap', name: 'Cheap Shirt', quality: 'cheap' },
-    { id: 'shirt-fancy', name: 'Fancy Shirt', quality: 'fancy' },
+    { id: 'shirt-cheap', name: 'Cheap Shirt', quality: 'cheap', rarity: 'common', slot: 'Shirt' },
+    { id: 'shirt-fancy', name: 'Fancy Shirt', quality: 'fancy', rarity: 'uncommon', slot: 'Shirt' },
   ],
   Pants: [
-    { id: 'pants-cheap', name: 'Cheap Pants', quality: 'cheap' },
-    { id: 'pants-fancy', name: 'Fancy Pants', quality: 'fancy' },
+    { id: 'pants-cheap', name: 'Cheap Pants', quality: 'cheap', rarity: 'common', slot: 'Pants' },
+    { id: 'pants-fancy', name: 'Fancy Pants', quality: 'fancy', rarity: 'uncommon', slot: 'Pants' },
   ],
   Instrument: [
-    { id: 'instrument-cheap', name: 'Cheap Instrument', quality: 'cheap' },
-    { id: 'instrument-fancy', name: 'Fancy Instrument', quality: 'fancy' },
+    { id: 'instrument-cheap', name: 'Cheap Instrument', quality: 'cheap', rarity: 'common', slot: 'Instrument' },
+    { id: 'instrument-fancy', name: 'Fancy Instrument', quality: 'fancy', rarity: 'uncommon', slot: 'Instrument' },
   ],
   Amplifier: [
-    { id: 'amp-cheap', name: 'Cheap Amplifier', quality: 'cheap' },
-    { id: 'amp-fancy', name: 'Fancy Amplifier', quality: 'fancy' },
+    { id: 'amp-cheap', name: 'Cheap Amplifier', quality: 'cheap', rarity: 'common', slot: 'Amplifier' },
+    { id: 'amp-fancy', name: 'Fancy Amplifier', quality: 'fancy', rarity: 'uncommon', slot: 'Amplifier' },
   ],
 }
 
@@ -65,6 +65,9 @@ function App() {
   const [newGameOpen, setNewGameOpen] = useState(false)
   const [pendingInstrument, setPendingInstrument] = useState(instrument)
   const [pendingSeed, setPendingSeed] = useState(String(seed))
+  const [shopOffers, setShopOffers] = useState(
+    savedState?.shopOffers ?? generateShopOffers(acts, seed),
+  )
 
   useEffect(() => {
     if (!hydrated.current) {
@@ -98,9 +101,24 @@ function App() {
       gameOver,
       instrument,
       gear,
+      shopOffers,
     })
     setLastSaved(now)
-  }, [seed, currentAct, selected, phase, currentRow, choices, selectedSongs, starEntries, results, gameOver, instrument, gear])
+  }, [
+    seed,
+    currentAct,
+    selected,
+    phase,
+    currentRow,
+    choices,
+    selectedSongs,
+    starEntries,
+    results,
+    gameOver,
+    instrument,
+    gear,
+    shopOffers,
+  ])
 
   const current = acts[currentAct]
   const selectedNode =
@@ -111,6 +129,7 @@ function App() {
   const canAdvanceAct = phase === 'done' && currentRow === current.rows.length - 1 && currentAct < acts.length - 1
   const selectTarget = selectedNode?.challenge?.selectCount ?? 3
   const readyToEnter = selectedSongs.length === selectTarget
+  const shopInventory = shopOffers[resultsKey(selected.act, selected.row)]
   const action =
     gameOver && selectedNode?.kind !== 'boss'
       ? null
@@ -194,28 +213,29 @@ function App() {
               {selectedNode.kind === 'shop' ? (
                 <>
                   <p className="eyebrow">Loadout</p>
-                  <div className="shop-grid">
-                    {gearSlots.map((slot) => (
-                      <div key={slot} className="shop-slot">
-                        <p className="meta">{slot}</p>
-                        <div className="shop-options">
-                          {(gearOptions[slot] || []).map((item) => {
-                            const equipped = gear[slot]?.id === item.id
-                            return (
-                              <button
-                                key={item.id}
-                                className={`shop-item ${equipped ? 'shop-item-active' : ''}`}
-                                onClick={() => equipGear(slot, item)}
-                                type="button"
-                              >
-                                {item.name}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {shopInventory ? (
+                    <div className="shop-grid">
+                      {shopInventory.map((item) => {
+                        const equipped = gear[item.slot]?.id === item.id
+                        return (
+                          <div key={item.id} className="shop-slot">
+                            <p className="meta">
+                              {item.slot} • {item.rarity}
+                            </p>
+                            <button
+                              className={`shop-item ${equipped ? 'shop-item-active' : ''}`}
+                              onClick={() => equipGear(item.slot, item)}
+                              type="button"
+                            >
+                              {item.name}
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="meta">No shop inventory.</p>
+                  )}
                 </>
               ) : null}
 
@@ -456,7 +476,8 @@ function App() {
 
   function startNewRun() {
     const nextSeed = parseInt(pendingSeed || '', 10)
-    setSeed(Number.isNaN(nextSeed) ? Date.now() : nextSeed)
+    const finalSeed = Number.isNaN(nextSeed) ? Date.now() : nextSeed
+    setSeed(finalSeed)
     setInstrument(pendingInstrument)
     setCurrentAct(0)
     setChoices({})
@@ -468,6 +489,7 @@ function App() {
     setStarEntries([])
     setGameOver(false)
     setGear(defaultGear())
+    setShopOffers(generateShopOffers(acts, finalSeed))
   }
 
   function openNewGame() {
@@ -749,4 +771,45 @@ export function defaultGear() {
     gear[slot] = gearOptions[slot]?.[0] || { id: `${slot}-none`, name: 'None' }
   })
   return gear
+}
+
+export function generateShopOffers(acts, seed) {
+  const offers = {}
+  const rng = mulberry32(seed)
+  const pool = weightedGearPool()
+  acts.forEach((act) => {
+    act.rows.forEach((row, rowIdx) => {
+      const node = row[0]
+      if (node?.kind !== nodeKinds.shop) return
+      const key = `${act.index - 1}-${rowIdx}`
+      offers[key] = pickGear(pool, 3, rng)
+    })
+  })
+  return offers
+}
+
+function weightedGearPool() {
+  const weights = { common: 25, uncommon: 5, rare: 2, epic: 1 }
+  const items = []
+  gearSlots.forEach((slot) => {
+    (gearOptions[slot] || []).forEach((item) => {
+      const w = weights[item.rarity] ?? 1
+      for (let i = 0; i < w; i++) {
+        items.push(item)
+      }
+    })
+  })
+  return items
+}
+
+function pickGear(pool, count, rng) {
+  const result = []
+  const seen = new Set()
+  while (result.length < count && result.length < pool.length) {
+    const item = pool[Math.floor(rng() * pool.length)]
+    if (seen.has(item.id)) continue
+    seen.add(item.id)
+    result.push(item)
+  }
+  return result
 }
