@@ -112,6 +112,9 @@ h1 {
   position: relative;
   width: 100%;
   height: calc(100% - 36px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .row {
