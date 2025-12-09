@@ -520,7 +520,7 @@ function NodeView({ node, x, y, selected, reachable, onSelect }) {
           reachable ? 'node-reachable' : 'node-disabled'
         }`}
       >
-        {node.kind === 'boss' ? 'B' : 'C'}
+        {node.kind === 'boss' ? 'B' : node.kind === 'shop' ? '$' : 'C'}
       </div>
     </div>
   )
